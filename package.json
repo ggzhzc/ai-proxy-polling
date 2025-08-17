@@ -10,7 +10,6 @@
     "openai": "^4.0.0",
     "anthropic": "latest",
     "@google/generative-ai": "latest",
-    "baichuan-api": "^1.0.0",
     "zhipu-ai": "^1.0.0",
     "axios": "^1.6.8",
     "node-fetch": "^3.3.2"
