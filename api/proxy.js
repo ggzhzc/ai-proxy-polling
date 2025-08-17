@@ -1,6 +1,6 @@
 import { kv } from '@vercel/kv';
 import { OpenAI } from 'openai';
-import Anthropic from '@anthropic-ai/sdk';
+import Anthropic from 'anthropic';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import axios from 'axios';
 
