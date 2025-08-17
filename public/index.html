@@ -211,6 +211,7 @@
                     </select>
                     <input type="text" id="add-key-input" placeholder="输入 API 密钥">
                 </div>
+                <input type="text" id="add-model-input" placeholder="输入模型名称 (例如: gpt-4o, claude-3-sonnet)">
                 <input type="text" id="add-baseurl-input" placeholder="输入 Base URL">
                 <button onclick="addKeyToList()">添加</button>
             </div>
@@ -235,6 +236,7 @@
         const keysListContainer = document.getElementById('keys-list-container');
         const addPlatformSelect = document.getElementById('add-platform');
         const addKeyInput = document.getElementById('add-key-input');
+        const addModelInput = document.getElementById('add-model-input');
         const addBaseUrlInput = document.getElementById('add-baseurl-input');
         const unifiedKeyDisplay = document.getElementById('unified-key-display');
 
@@ -256,8 +258,9 @@
                     const keyItem = document.createElement('div');
                     keyItem.className = 'key-item';
                     const displayUrl = item.baseURL ? ` (${item.baseURL.replace(/^https?:\/\//, '').slice(0, 25)}...)` : '';
+                    const displayModel = item.model ? ` [${item.model}]` : '';
                     keyItem.innerHTML = `
-                        <span class="key-info">${item.platform}: ${item.key.slice(0, 4)}...${item.key.slice(-4)}${displayUrl}</span>
+                        <span class="key-info">${item.platform}: ${item.key.slice(0, 4)}...${item.key.slice(-4)}${displayModel}${displayUrl}</span>
                         <button class="delete-btn" onclick="removeKeyFromList(${index})">删除</button>
                     `;
                     keysListContainer.appendChild(keyItem);
@@ -272,6 +275,7 @@
         function addKeyToList() {
             const platform = addPlatformSelect.value;
             const key = addKeyInput.value.trim();
+            const model = addModelInput.value.trim();
             const baseURL = addBaseUrlInput.value.trim();
             
             if (!key) {
@@ -280,6 +284,9 @@
             }
             
             const newKey = { platform, key };
+            if (model) {
+                newKey.model = model;
+            }
             if (platformsWithBaseUrl.includes(platform)) {
                  if (!baseURL) {
                     showStatus('请为该平台输入 Base URL', 'error');
@@ -290,6 +297,7 @@
 
             currentKeys.push(newKey);
             addKeyInput.value = '';
+            addModelInput.value = '';
             addBaseUrlInput.value = '';
             addPlatformSelect.value = 'openai';
             addPlatformSelect.dispatchEvent(new Event('change'));
