@@ -1,49 +1,83 @@
 import { kv } from '@vercel/kv';
 import OpenAI from 'openai';
+import Anthropic from '@anthropic-ai/sdk';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import axios from 'axios';
 
-// 用于存储当前使用的密钥索引
-let currentKeyIndex = 0;
+// 统一的请求处理函数，处理不同平台的API调用
+async function handleRequest(provider, requestBody) {
+  switch (provider.platform) {
+    case 'openai':
+    case 'azure-openai':
+      const openai = new OpenAI({ 
+        apiKey: provider.key,
+        // 如果是 Azure，需要配置不同的 baseURL
+        baseURL: provider.platform === 'azure-openai' ? 'YOUR_AZURE_ENDPOINT' : undefined
+      });
+      const openaiCompletion = await openai.chat.completions.create({
+        model: requestBody.model || 'gpt-3.5-turbo',
+        messages: requestBody.messages,
+        stream: false,
+      });
+      return openaiCompletion;
+
+    case 'anthropic':
+      const anthropic = new Anthropic({ apiKey: provider.key });
+      const anthropicCompletion = await anthropic.messages.create({
+        model: requestBody.model || 'claude-3-haiku-20240307',
+        max_tokens: requestBody.max_tokens || 1024,
+        messages: requestBody.messages,
+      });
+      return anthropicCompletion;
+    
+    case 'google':
+      const genAI = new GoogleGenerativeAI(provider.key);
+      const model = genAI.getGenerativeModel({ model: requestBody.model || 'gemini-pro' });
+      const chat = model.startChat();
+      const googleCompletion = await chat.sendMessage(requestBody.messages[requestBody.messages.length - 1].content);
+      return googleCompletion.response;
+
+    case 'zhipuai':
+    case 'baichuan':
+    case 'wenxinyiyan':
+    case 'iflytek':
+    case 'kimi':
+    case 'llama':
+    case 'siliconflow':
+      // 对于这些平台，请在这里根据其官方文档填充 API 调用逻辑
+      // 很多中国厂商的 API 需要通过 HTTP 请求调用
+      // 你可以使用 axios 或 node-fetch
+      // 示例:
+      // const response = await axios.post('https://api.some-vendor.com/v1/chat/completions', { ... }, { headers: { 'Authorization': `Bearer ${provider.key}` } });
+      throw new Error(`API logic for ${provider.platform} is not implemented.`);
+
+    default:
+      throw new Error(`Unsupported platform: ${provider.platform}`);
+  }
+}
 
 export default async function handler(request, response) {
   try {
-    // 从 Vercel KV 中获取 API 密钥列表
-    const keys = await kv.get('api_keys');
+    const providers = await kv.get('api_keys');
 
-    if (!keys || keys.length === 0) {
+    if (!providers || providers.length === 0) {
       return response.status(503).json({ error: 'No API keys configured.' });
     }
 
-    let success = false;
     let lastError = null;
 
-    // 轮询尝试所有密钥
-    for (let i = 0; i < keys.length; i++) {
-      const keyIndexToUse = (currentKeyIndex + i) % keys.length;
-      const apiKey = keys[keyIndexToUse];
-      const openai = new OpenAI({ apiKey: apiKey });
-
+    for (const provider of providers) {
       try {
-        const completion = await openai.chat.completions.create({
-          model: "gpt-3.5-turbo",
-          messages: request.body.messages,
-          stream: false,
-        });
-
-        // 如果调用成功，更新索引并返回结果
-        currentKeyIndex = (keyIndexToUse + 1) % keys.length;
-        success = true;
-        return response.status(200).json(completion);
-
+        const result = await handleRequest(provider, request.body);
+        console.log(`Successfully used API from: ${provider.platform}`);
+        return response.status(200).json(result);
       } catch (error) {
-        console.error(`Error with key at index ${keyIndexToUse}:`, error.message);
+        console.error(`Error with ${provider.platform} API:`, error.message);
         lastError = error;
       }
     }
 
-    // 所有密钥都失败了
-    if (!success) {
-      return response.status(500).json({ error: 'All API keys failed.', details: lastError?.message });
-    }
+    return response.status(500).json({ error: 'All API providers failed.', details: lastError?.message });
 
   } catch (error) {
     console.error('Proxy Error:', error.message);
