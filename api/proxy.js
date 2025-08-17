@@ -47,11 +47,24 @@ async function handleRequest(provider, requestBody) {
       return anthropicCompletion;
     
     case 'google':
+      // 修正后的Google Gemini调用逻辑，更健壮地处理请求
       const genAI = new GoogleGenerativeAI(provider.key);
-      const model = genAI.getGenerativeModel({ model: modelToUse });
-      const chat = model.startChat();
-      const googleCompletion = await chat.sendMessage(requestBody.messages[requestBody.messages.length - 1].content);
-      return googleCompletion.response;
+      const googleModel = genAI.getGenerativeModel({ model: modelToUse });
+      const googleChat = googleModel.startChat({ history: [] }); // 使用一个空历史记录启动聊天
+      
+      const lastMessageContent = requestBody.messages[requestBody.messages.length - 1].content;
+      
+      const googleCompletion = await googleChat.sendMessage(lastMessageContent);
+      return {
+          id: 'google-response',
+          model: modelToUse,
+          choices: [{
+              message: {
+                  role: 'assistant',
+                  content: googleCompletion.response.text(),
+              }
+          }],
+      };
 
     case 'qwen':
       const qwenResponse = await axios.post(
