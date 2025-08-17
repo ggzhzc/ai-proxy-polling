@@ -1,4 +1,10 @@
 import { kv } from '@vercel/kv';
+import crypto from 'crypto';
+
+function generateOpenAIKey() {
+    const randomHex = crypto.randomBytes(24).toString('hex');
+    return `sk-${randomHex}`;
+}
 
 export default async function handler(request, response) {
   if (request.method !== 'POST') {
@@ -16,14 +22,12 @@ export default async function handler(request, response) {
     if (action === 'get_unified_key') {
       let unifiedKey = await kv.get('unified_api_key');
       if (!unifiedKey) {
-          // 由于无法安全地生成 Key，暂时返回一个占位符
-          unifiedKey = 'placeholder-key';
-          // 真正的 Key 生成和重置逻辑需要在前端或一个更安全的后端函数中处理
+          unifiedKey = generateOpenAIKey();
+          await kv.set('unified_api_key', unifiedKey);
       }
       return response.status(200).json({ unifiedKey });
     } else if (action === 'reset_unified_key') {
-      // 占位符，重置逻辑被简化
-      const newKey = 'placeholder-key-reset';
+      const newKey = generateOpenAIKey();
       await kv.set('unified_api_key', newKey);
       return response.status(200).json({ unifiedKey: newKey });
     }
