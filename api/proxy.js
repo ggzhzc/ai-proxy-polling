@@ -118,6 +118,15 @@ async function handleRequest(provider, requestBody) {
 }
 
 export default async function handler(request, response) {
+  // 1. 验证统一API Key
+  const unifiedKey = request.headers['authorization']?.split(' ')[1];
+  const storedUnifiedKey = await kv.get('unified_api_key');
+
+  if (!unifiedKey || unifiedKey !== storedUnifiedKey) {
+      return response.status(401).json({ error: 'Unauthorized: Invalid or missing API key.' });
+  }
+
+  // 2. 轮询调用逻辑
   try {
     const providers = await kv.get('api_keys');
 
