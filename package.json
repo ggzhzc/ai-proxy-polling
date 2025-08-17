@@ -1,0 +1,13 @@
+{
+  "name": "ai-proxy-polling-service",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "vercel dev"
+  },
+  "dependencies": {
+    "@vercel/kv": "^0.2.2",
+    "openai": "^4.0.0"
+  },
+  "license": "MIT"
+}
