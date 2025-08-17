@@ -6,15 +6,22 @@ import axios from 'axios';
 
 // 统一的请求处理函数，处理不同平台的API调用
 async function handleRequest(provider, requestBody) {
+  const modelToUse = provider.model;
+  
+  // 检查是否配置了模型，如果没有，则抛出错误
+  if (!modelToUse) {
+    throw new Error(`Platform "${provider.platform}" has no model configured. Please update in the admin panel.`);
+  }
+
   switch (provider.platform) {
     case 'openai':
       const openai = new OpenAI({ 
         apiKey: provider.key
       });
       const openaiCompletion = await openai.chat.completions.create({
-        model: requestBody.model || 'gpt-3.5-turbo',
+        model: modelToUse,
         messages: requestBody.messages,
-        stream: false,
+        stream: requestBody.stream || false,
       });
       return openaiCompletion;
 
@@ -24,24 +31,25 @@ async function handleRequest(provider, requestBody) {
         baseURL: provider.baseURL
       });
       const azureOpenaiCompletion = await azureOpenai.chat.completions.create({
-        model: requestBody.model || 'gpt-4',
+        model: modelToUse,
         messages: requestBody.messages,
-        stream: false,
+        stream: requestBody.stream || false,
       });
       return azureOpenaiCompletion;
 
     case 'anthropic':
       const anthropic = new Anthropic({ apiKey: provider.key });
       const anthropicCompletion = await anthropic.messages.create({
-        model: requestBody.model || 'claude-3-haiku-20240307',
+        model: modelToUse,
         max_tokens: requestBody.max_tokens || 1024,
         messages: requestBody.messages,
+        stream: requestBody.stream || false,
       });
       return anthropicCompletion;
     
     case 'google':
       const genAI = new GoogleGenerativeAI(provider.key);
-      const model = genAI.getGenerativeModel({ model: requestBody.model || 'gemini-pro' });
+      const model = genAI.getGenerativeModel({ model: modelToUse });
       const chat = model.startChat();
       const googleCompletion = await chat.sendMessage(requestBody.messages[requestBody.messages.length - 1].content);
       return googleCompletion.response;
@@ -50,7 +58,7 @@ async function handleRequest(provider, requestBody) {
       const qwenResponse = await axios.post(
         'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation',
         {
-          model: requestBody.model || 'qwen-turbo',
+          model: modelToUse,
           input: {
             messages: requestBody.messages,
           },
@@ -70,9 +78,9 @@ async function handleRequest(provider, requestBody) {
         baseURL: 'https://api.deepseek.com/v1',
       });
       const deepseekCompletion = await deepseekClient.chat.completions.create({
-        model: requestBody.model || 'deepseek-chat',
+        model: modelToUse,
         messages: requestBody.messages,
-        stream: false,
+        stream: requestBody.stream || false,
       });
       return deepseekCompletion;
       
@@ -82,9 +90,9 @@ async function handleRequest(provider, requestBody) {
         baseURL: 'https://api.moonshot.cn/v1',
       });
       const kimiCompletion = await kimiClient.chat.completions.create({
-        model: requestBody.model || 'moonshot-v1-8k',
+        model: modelToUse,
         messages: requestBody.messages,
-        stream: false,
+        stream: requestBody.stream || false,
       });
       return kimiCompletion;
       
@@ -94,9 +102,9 @@ async function handleRequest(provider, requestBody) {
         baseURL: 'https://api.together.xyz/v1',
       });
       const llamaCompletion = await llamaClient.chat.completions.create({
-        model: requestBody.model,
+        model: modelToUse,
         messages: requestBody.messages,
-        stream: false,
+        stream: requestBody.stream || false,
       });
       return llamaCompletion;
 
@@ -106,9 +114,9 @@ async function handleRequest(provider, requestBody) {
         baseURL: provider.baseURL,
       });
       const compatibleCompletion = await compatibleClient.chat.completions.create({
-        model: requestBody.model,
+        model: modelToUse,
         messages: requestBody.messages,
-        stream: false,
+        stream: requestBody.stream || false,
       });
       return compatibleCompletion;
 
@@ -118,7 +126,6 @@ async function handleRequest(provider, requestBody) {
 }
 
 export default async function handler(request, response) {
-  // 1. 验证统一API Key
   const unifiedKey = request.headers['authorization']?.split(' ')[1];
   const storedUnifiedKey = await kv.get('unified_api_key');
 
@@ -126,7 +133,6 @@ export default async function handler(request, response) {
       return response.status(401).json({ error: 'Unauthorized: Invalid or missing API key.' });
   }
 
-  // 2. 轮询调用逻辑
   try {
     const providers = await kv.get('api_keys');
 
