@@ -33,7 +33,6 @@
         const statusDiv = document.getElementById('status');
         const loginForm = document.getElementById('login-form');
         const managePanel = document.getElementById('manage-panel');
-        let currentPassword = '';
 
         async function login() {
             const password = document.getElementById('password').value;
@@ -41,90 +40,8 @@
                 showStatus('请输入密码。', 'error');
                 return;
             }
-
-            try {
-                // 验证密码，这里我们不发送密码到服务器，而是直接使用它来做后续请求的认证
-                currentPassword = password;
-                
-                // 模拟一个请求来获取当前密钥，作为登录成功的一个标志
-                const response = await fetch('/api/keys');
-                if (!response.ok) {
-                    throw new Error('无法获取密钥，请检查密码是否正确。');
-                }
-                const data = await response.json();
-                
-                loginForm.classList.add('hidden');
-                managePanel.classList.remove('hidden');
-                document.getElementById('api-keys-input').value = data.join('\n');
-                showStatus('登录成功！', 'success');
-            } catch (error) {
-                showStatus('登录失败：' + error.message, 'error');
-            }
-        }
-        
-        async function updateKeys() {
-            const apiKeysInput = document.getElementById('api-keys-input').value;
-            const keys = apiKeysInput.split('\n').map(key => key.trim()).filter(key => key.length > 0);
             
             try {
-                const response = await fetch('/api/manage', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        password: currentPassword,
-                        keys: keys
-                    })
-                });
-                
-                const data = await response.json();
-                if (response.ok) {
-                    showStatus('密钥已成功更新！', 'success');
-                } else {
-                    throw new Error(data.error);
-                }
-            } catch (error) {
-                showStatus('更新失败：' + error.message, 'error');
-            }
-        }
-        
-        // 辅助函数：显示状态信息
-        function showStatus(message, type) {
-            statusDiv.textContent = message;
-            statusDiv.className = '';
-            statusDiv.classList.add('status', type);
-        }
-        
-        // 由于前端无法直接从环境变量读取密码，我们做个小改动，用一个临时的API来验证。
-        // 这段代码是为 `manage.js` 提供一个简单的GET接口来获取当前密钥列表
-        async function getKeysForDisplay() {
-            try {
-                const response = await fetch('/api/keys', {
-                    headers: {
-                       'x-password': document.getElementById('password').value
-                    }
-                });
-                if (response.ok) {
-                     const data = await response.json();
-                     loginForm.classList.add('hidden');
-                     managePanel.classList.remove('hidden');
-                     document.getElementById('api-keys-input').value = data.join('\n');
-                     showStatus('登录成功！', 'success');
-                } else {
-                     throw new Error('密码错误或服务错误');
-                }
-            } catch(error) {
-                showStatus('登录失败：' + error.message, 'error');
-            }
-        }
-        // 重写 login 函数
-        async function login() {
-            const password = document.getElementById('password').value;
-            if (!password) {
-                showStatus('请输入密码。', 'error');
-                return;
-            }
-            try {
-                // 发送请求到后端，后端进行密码验证并返回密钥列表
                 const response = await fetch('/api/keys', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -177,6 +94,13 @@
             } catch (error) {
                 showStatus('更新失败：' + error.message, 'error');
             }
+        }
+        
+        // 辅助函数：显示状态信息
+        function showStatus(message, type) {
+            statusDiv.textContent = message;
+            statusDiv.className = '';
+            statusDiv.classList.add('status', type);
         }
     </script>
 </body>
