@@ -2,6 +2,7 @@ import { kv } from '@vercel/kv';
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { ZhipuAI } from 'zhipu-ai';
 import axios from 'axios';
 
 // 统一的请求处理函数，处理不同平台的API调用
@@ -63,15 +64,49 @@ async function handleRequest(provider, requestBody) {
         }
       );
       return qwenResponse.data;
-    
+      
+    case 'deepseek':
+      const deepseekClient = new OpenAI({
+        apiKey: provider.key,
+        baseURL: 'https://api.deepseek.com/v1',
+      });
+      const deepseekCompletion = await deepseekClient.chat.completions.create({
+        model: requestBody.model || 'deepseek-chat',
+        messages: requestBody.messages,
+        stream: false,
+      });
+      return deepseekCompletion;
+      
+    case 'kimi':
+      const kimiClient = new OpenAI({
+        apiKey: provider.key,
+        baseURL: 'https://api.moonshot.cn/v1',
+      });
+      const kimiCompletion = await kimiClient.chat.completions.create({
+        model: requestBody.model || 'moonshot-v1-8k',
+        messages: requestBody.messages,
+        stream: false,
+      });
+      return kimiCompletion;
+      
+    case 'zhipuai':
+      const zhipuClient = new ZhipuAI({
+        apiKey: provider.key,
+      });
+      const zhipuCompletion = await zhipuClient.chat.completions.create({
+        model: requestBody.model || 'glm-4',
+        messages: requestBody.messages,
+        stream: false,
+      });
+      return zhipuCompletion;
+
     case 'openai-compatible':
-      // 这是一个通用的情况，用于处理任何兼容 OpenAI 格式的 API
       const compatibleClient = new OpenAI({
         apiKey: provider.key,
-        baseURL: provider.baseURL, // 关键：动态设置 baseURL
+        baseURL: provider.baseURL,
       });
       const compatibleCompletion = await compatibleClient.chat.completions.create({
-        model: requestBody.model, // 必须指定模型名称
+        model: requestBody.model,
         messages: requestBody.messages,
         stream: false,
       });
