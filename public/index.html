@@ -6,6 +6,7 @@
     <style>
         :root {
             --primary-color: #4A90E2;
+            --secondary-color: #34495E;
             --success-bg: #E8F5E9;
             --success-text: #2E7D32;
             --error-bg: #FBEAEA;
@@ -13,48 +14,63 @@
             --border-color: #E0E0E0;
             --shadow-light: rgba(0, 0, 0, 0.05);
             --delete-color: #E74C3C;
+            --copy-color: #2ECC71;
         }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: #F8F9FA;
+            background-color: var(--secondary-color);
             color: #333;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            opacity: 0;
-            transition: opacity 0.5s;
         }
 
         .container {
             background-color: #fff;
             padding: 40px;
             border-radius: 12px;
-            box-shadow: 0 4px 12px var(--shadow-light);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
             width: 100%;
             max-width: 600px;
             box-sizing: border-box;
+            border: 1px solid #e1e4e8;
         }
         
         h1 {
-            color: #2C3E50;
-            font-size: 24px;
+            color: var(--secondary-color);
+            font-size: 28px;
             margin-bottom: 30px;
             text-align: center;
+            font-weight: 600;
         }
         
         .section-title {
-            color: #2C3E50;
+            color: var(--secondary-color);
             font-size: 18px;
-            font-weight: bold;
+            font-weight: 500;
             margin-top: 30px;
             margin-bottom: 15px;
+        }
+        
+        .sub-title {
+            color: #777;
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 20px;
         }
 
         .hidden {
             display: none;
+        }
+        
+        .add-form-group {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
         }
         
         .add-form {
@@ -65,21 +81,41 @@
         
         .add-form .input-group {
             display: flex;
-            gap: 10px;
-            align-items: center;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .add-form label {
+            font-size: 14px;
+            color: #555;
+            text-align: left;
         }
 
         .add-form input, .add-form select {
-            flex-grow: 1;
+            width: 100%;
             padding: 12px;
+            box-sizing: border-box;
             border: 1px solid var(--border-color);
             border-radius: 8px;
+            font-size: 16px;
         }
-        
+
         .add-form button {
-            width: auto;
-            min-width: 80px;
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
             background-color: var(--primary-color);
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 10px;
+        }
+
+        .add-form button:hover {
+            background-color: #3a75b6;
         }
 
         .keys-list {
@@ -93,11 +129,11 @@
 
         .key-item {
             display: flex;
-            flex-wrap: wrap;
             justify-content: space-between;
             align-items: center;
-            padding: 10px;
-            border-bottom: 1px solid var(--border-color);
+            padding: 12px;
+            border-bottom: 1px solid #e1e4e8;
+            font-size: 14px;
         }
         
         .key-item:last-child {
@@ -106,19 +142,19 @@
         
         .key-item .key-info {
             word-break: break-all;
-            flex: 1 1 70%;
+            flex-grow: 1;
             margin-right: 10px;
+            color: #555;
         }
-        
+
         .key-item .delete-btn {
             background-color: var(--delete-color);
             color: #fff;
             border: none;
-            padding: 5px 10px;
+            padding: 6px 12px;
             border-radius: 6px;
             cursor: pointer;
             transition: background-color 0.2s;
-            flex: 0 0 auto;
         }
         
         .key-item .delete-btn:hover {
@@ -134,6 +170,19 @@
         
         .main-buttons button {
             width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background-color: var(--primary-color);
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .main-buttons button:hover {
+            background-color: #3a75b6;
         }
 
         #status {
@@ -158,26 +207,57 @@
         .key-display-container {
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            padding: 10px;
+            padding: 15px;
             margin-bottom: 20px;
+            text-align: left;
         }
 
         .key-display {
             font-family: monospace;
             word-break: break-all;
             background-color: #f1f3f5;
-            padding: 8px;
-            border-radius: 4px;
+            padding: 10px;
+            border-radius: 6px;
             font-size: 14px;
+            line-height: 1.5;
+            margin-top: 10px;
+        }
+        
+        .key-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .key-actions button {
+            flex-grow: 1;
+            padding: 8px;
+            font-size: 14px;
+        }
+        
+        .copy-btn {
+            background-color: var(--copy-color);
+        }
+        
+        .copy-btn:hover {
+            background-color: #279e57;
+        }
+        
+        .reset-btn {
+            background-color: #999;
+        }
+        
+        .reset-btn:hover {
+            background-color: #777;
         }
     </style>
 </head>
-<body style="opacity: 0;">
+<body>
     <div class="container">
         <h1>API 密钥管理</h1>
 
-        <div id="login-form" class="hidden">
-            <p style="text-align: center;">请输入管理密码：</p>
+        <div id="login-form">
+            <p class="sub-title">请输入管理密码：</p>
             <input type="password" id="password" placeholder="管理密码">
             <div class="main-buttons">
                 <button onclick="login()">登录</button>
@@ -185,35 +265,47 @@
         </div>
 
         <div id="manage-panel" class="hidden">
-            <p class="section-title">统一代理 API Key</p>
+            <p class="section-title">统一代理 API 密钥</p>
             <div class="key-display-container">
-                <p>将此 Key 填写到第三方软件中：</p>
+                <p class="sub-title">请将此密钥填写到第三方软件中：</p>
                 <div id="unified-key-display" class="key-display"></div>
-                <div style="margin-top: 10px; display: flex; gap: 10px;">
-                    <button onclick="copyUnifiedKey()" style="background-color: #2ECC71;">复制</button>
-                    <button onclick="resetUnifiedKey()">重置 Key</button>
+                <div class="key-actions">
+                    <button class="copy-btn" onclick="copyUnifiedKey()">复制</button>
+                    <button class="reset-btn" onclick="resetUnifiedKey()">重置密钥</button>
                 </div>
             </div>
 
             <p class="section-title">管理后端 API 密钥</p>
-            <div class="add-form">
-                <div class="input-group">
-                    <select id="add-platform">
-                        <option value="openai">OpenAI</option>
-                        <option value="anthropic">Anthropic Claude</option>
-                        <option value="google">Google (Gemini)</option>
-                        <option value="qwen">阿里通义千问 (Qwen)</option>
-                        <option value="deepseek">DeepSeek</option>
-                        <option value="kimi">Kimi</option>
-                        <option value="llama">Llama</option>
-                        <option value="azure-openai">Azure OpenAI</option>
-                        <option value="openai-compatible">OpenAI 兼容</option>
-                    </select>
-                    <input type="text" id="add-key-input" placeholder="输入 API 密钥">
+            <div class="add-form-group">
+                <div class="add-form">
+                    <div class="input-group">
+                        <label for="add-platform">选择平台：</label>
+                        <select id="add-platform">
+                            <option value="openai">OpenAI</option>
+                            <option value="anthropic">Anthropic Claude</option>
+                            <option value="google">Google (Gemini)</option>
+                            <option value="qwen">阿里通义千问 (Qwen)</option>
+                            <option value="deepseek">DeepSeek</option>
+                            <option value="kimi">Kimi</option>
+                            <option value="llama">Llama</option>
+                            <option value="azure-openai">Azure OpenAI</option>
+                            <option value="openai-compatible">OpenAI 兼容</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="add-key-input">输入 API 密钥：</label>
+                        <input type="text" id="add-key-input" placeholder="输入 API 密钥">
+                    </div>
+                    <div class="input-group">
+                        <label for="add-model-input">输入模型名称：</label>
+                        <input type="text" id="add-model-input" placeholder="例如: gpt-4o, claude-3-sonnet">
+                    </div>
+                    <div class="input-group" id="baseurl-group">
+                        <label for="add-baseurl-input">输入 Base URL：</label>
+                        <input type="text" id="add-baseurl-input" placeholder="仅用于兼容/Azure/非官方地址">
+                    </div>
+                    <button onclick="addKeyToList()">添加到列表</button>
                 </div>
-                <input type="text" id="add-model-input" placeholder="输入模型名称 (例如: gpt-4o, claude-3-sonnet)">
-                <input type="text" id="add-baseurl-input" placeholder="输入 Base URL">
-                <button onclick="addKeyToList()">添加</button>
             </div>
 
             <p class="section-title">已添加的密钥</p>
@@ -239,14 +331,15 @@
         const addModelInput = document.getElementById('add-model-input');
         const addBaseUrlInput = document.getElementById('add-baseurl-input');
         const unifiedKeyDisplay = document.getElementById('unified-key-display');
+        const baseurlGroup = document.getElementById('baseurl-group');
 
         const platformsWithBaseUrl = ['openai-compatible', 'azure-openai'];
 
         addPlatformSelect.addEventListener('change', () => {
             if (platformsWithBaseUrl.includes(addPlatformSelect.value)) {
-                addBaseUrlInput.style.display = 'block';
+                baseurlGroup.style.display = 'flex';
             } else {
-                addBaseUrlInput.style.display = 'none';
+                baseurlGroup.style.display = 'none';
             }
         });
         addPlatformSelect.dispatchEvent(new Event('change'));
@@ -303,7 +396,7 @@
             addPlatformSelect.dispatchEvent(new Event('change'));
             
             renderKeysList(currentKeys);
-            showStatus('密钥已添加至列表，请点击“更新密钥”保存', 'success');
+            showStatus('密钥已添加到列表，请点击“更新密钥”保存', 'success');
         }
 
         function removeKeyFromList(index) {
@@ -407,7 +500,7 @@
         }
 
         async function resetUnifiedKey() {
-            if (!confirm('确定要重置统一 API Key 吗？这将导致旧 Key 失效。')) {
+            if (!confirm('确定要重置统一 API 密钥吗？这将导致旧密钥失效。')) {
                 return;
             }
             const password = localStorage.getItem('adminPassword');
@@ -422,7 +515,7 @@
                 if (response.ok) {
                     const data = await response.json();
                     unifiedKeyDisplay.textContent = data.unifiedKey;
-                    showStatus('统一 Key 已重置！', 'success');
+                    showStatus('统一密钥已重置！', 'success');
                 } else {
                     throw new Error('Failed to reset unified key.');
                 }
@@ -439,7 +532,7 @@
                     await navigator.clipboard.writeText(keyToCopy);
                     showStatus('已成功复制到剪贴板！', 'success');
                 } else {
-                    showStatus('没有可复制的 Key', 'error');
+                    showStatus('没有可复制的密钥', 'error');
                 }
             } catch (err) {
                 showStatus('复制失败，请手动复制', 'error');
