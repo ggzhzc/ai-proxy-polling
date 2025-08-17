@@ -8,10 +8,8 @@ import axios from 'axios';
 async function handleRequest(provider, requestBody) {
   switch (provider.platform) {
     case 'openai':
-    case 'azure-openai':
       const openai = new OpenAI({ 
-        apiKey: provider.key,
-        baseURL: provider.platform === 'azure-openai' ? 'YOUR_AZURE_ENDPOINT' : undefined
+        apiKey: provider.key
       });
       const openaiCompletion = await openai.chat.completions.create({
         model: requestBody.model || 'gpt-3.5-turbo',
@@ -19,6 +17,18 @@ async function handleRequest(provider, requestBody) {
         stream: false,
       });
       return openaiCompletion;
+
+    case 'azure-openai':
+      const azureOpenai = new OpenAI({ 
+        apiKey: provider.key,
+        baseURL: provider.baseURL
+      });
+      const azureOpenaiCompletion = await azureOpenai.chat.completions.create({
+        model: requestBody.model || 'gpt-4',
+        messages: requestBody.messages,
+        stream: false,
+      });
+      return azureOpenaiCompletion;
 
     case 'anthropic':
       const anthropic = new Anthropic({ apiKey: provider.key });
@@ -37,8 +47,6 @@ async function handleRequest(provider, requestBody) {
       return googleCompletion.response;
 
     case 'qwen':
-      // 阿里云千问 API 的调用逻辑
-      // 官方文档: https://help.aliyun.com/document_detail/2712536.html
       const qwenResponse = await axios.post(
         'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation',
         {
@@ -55,15 +63,19 @@ async function handleRequest(provider, requestBody) {
         }
       );
       return qwenResponse.data;
-
-    case 'baichuan':
-    case 'wenxinyiyan':
-    case 'iflytek':
-    case 'kimi':
-    case 'llama':
-    case 'siliconflow':
-    case 'zhipuai':
-      throw new Error(`API logic for ${provider.platform} is not implemented.`);
+    
+    case 'openai-compatible':
+      // 这是一个通用的情况，用于处理任何兼容 OpenAI 格式的 API
+      const compatibleClient = new OpenAI({
+        apiKey: provider.key,
+        baseURL: provider.baseURL, // 关键：动态设置 baseURL
+      });
+      const compatibleCompletion = await compatibleClient.chat.completions.create({
+        model: requestBody.model, // 必须指定模型名称
+        messages: requestBody.messages,
+        stream: false,
+      });
+      return compatibleCompletion;
 
     default:
       throw new Error(`Unsupported platform: ${provider.platform}`);
