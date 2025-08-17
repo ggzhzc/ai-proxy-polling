@@ -2,9 +2,8 @@ import { kv } from '@vercel/kv';
 import { OpenAI } from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import axios from 'axios';
+const axios = require('axios');
 
-// 统一的请求处理函数，处理不同平台的API调用
 async function handleRequest(provider, requestBody) {
   const modelToUse = provider.model;
   
@@ -47,14 +46,11 @@ async function handleRequest(provider, requestBody) {
       return anthropicCompletion;
     
     case 'google':
-      // 修正后的Google Gemini调用逻辑，更健壮地处理请求
       const genAI = new GoogleGenerativeAI(provider.key);
-      const googleModel = genAI.getGenerativeModel({ model: modelToUse });
-      const googleChat = googleModel.startChat({ history: [] }); // 使用一个空历史记录启动聊天
-      
+      const model = genAI.getGenerativeModel({ model: modelToUse });
+      const chat = model.startChat({ history: [] });
       const lastMessageContent = requestBody.messages[requestBody.messages.length - 1].content;
-      
-      const googleCompletion = await googleChat.sendMessage(lastMessageContent);
+      const googleCompletion = await chat.sendMessage(lastMessageContent);
       return {
           id: 'google-response',
           model: modelToUse,
