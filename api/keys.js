@@ -1,7 +1,6 @@
 import { kv } from '@vercel/kv';
 import crypto from 'crypto';
 
-// 生成一个完美匹配 OpenAI 密钥长度的随机 Key
 function generateOpenAIKey() {
     const randomHex = crypto.randomBytes(24).toString('hex');
     return `sk-${randomHex}`;
@@ -33,7 +32,6 @@ export default async function handler(request, response) {
       return response.status(200).json({ unifiedKey: newKey });
     }
     
-    // 返回所有平台的 API Keys
     const platformKeys = await kv.get('api_keys');
     return response.status(200).json(platformKeys || []);
   } catch (error) {
