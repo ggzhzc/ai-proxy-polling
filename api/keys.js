@@ -1,8 +1,14 @@
 import { kv } from '@vercel/kv';
-import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
+
+// 生成一个类似 OpenAI 格式的随机 Key
+function generateOpenAIKey() {
+    const randomString = crypto.randomBytes(24).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    return `sk-proxy-${randomString}`;
+}
 
 export default async function handler(request, response) {
-  // 仅限POST请求，用于获取/生成统一Key
+  // 仅限 POST 请求，用于获取/生成统一 Key
   if (request.method !== 'POST') {
     return response.status(405).json({ error: 'Method Not Allowed' });
   }
@@ -19,17 +25,17 @@ export default async function handler(request, response) {
       let unifiedKey = await kv.get('unified_api_key');
       // 如果没有，则生成一个
       if (!unifiedKey) {
-          unifiedKey = `sk-proxy-${uuidv4()}`;
+          unifiedKey = generateOpenAIKey();
           await kv.set('unified_api_key', unifiedKey);
       }
       return response.status(200).json({ unifiedKey });
     } else if (action === 'reset_unified_key') {
-      const newKey = `sk-proxy-${uuidv4()}`;
+      const newKey = generateOpenAIKey();
       await kv.set('unified_api_key', newKey);
       return response.status(200).json({ unifiedKey: newKey });
     }
     
-    // 返回所有平台的API Keys
+    // 返回所有平台的 API Keys
     const platformKeys = await kv.get('api_keys');
     return response.status(200).json(platformKeys || []);
   } catch (error) {
