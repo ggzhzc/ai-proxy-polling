@@ -59,10 +59,16 @@
         
         .add-form {
             display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .add-form .input-group {
+            display: flex;
             gap: 10px;
             align-items: center;
         }
-        
+
         .add-form input, .add-form select {
             flex-grow: 1;
             padding: 12px;
@@ -87,6 +93,7 @@
 
         .key-item {
             display: flex;
+            flex-wrap: wrap;
             justify-content: space-between;
             align-items: center;
             padding: 10px;
@@ -97,12 +104,12 @@
             border-bottom: none;
         }
         
-        .key-item span {
+        .key-item .key-info {
             word-break: break-all;
+            flex: 1 1 70%;
             margin-right: 10px;
-            flex-grow: 1;
         }
-
+        
         .key-item .delete-btn {
             background-color: var(--delete-color);
             color: #fff;
@@ -111,6 +118,7 @@
             border-radius: 6px;
             cursor: pointer;
             transition: background-color 0.2s;
+            flex: 0 0 auto;
         }
         
         .key-item .delete-btn:hover {
@@ -163,20 +171,18 @@
         <div id="manage-panel" class="hidden">
             <p class="section-title">添加新密钥</p>
             <div class="add-form">
-                <select id="add-platform">
-                    <option value="openai">openai</option>
-                    <option value="anthropic">anthropic</option>
-                    <option value="google">google</option>
-                    <option value="llama">llama</option>
-                    <option value="baichuan">baichuan</option>
-                    <option value="iflytek">iflytek</option>
-                    <option value="zhipuai">zhipuai</option>
-                    <option value="wenxinyiyan">wenxinyiyan</option>
-                    <option value="kimi">kimi</option>
-                    <option value="siliconflow">siliconflow</option>
-                    <option value="azure-openai">azure-openai</option>
-                </select>
-                <input type="text" id="add-key-input" placeholder="输入 API 密钥">
+                <div class="input-group">
+                    <select id="add-platform">
+                        <option value="openai">openai</option>
+                        <option value="anthropic">anthropic</option>
+                        <option value="google">google</option>
+                        <option value="qwen">qwen</option>
+                        <option value="azure-openai">azure-openai</option>
+                        <option value="openai-compatible">openai-compatible</option>
+                    </select>
+                    <input type="text" id="add-key-input" placeholder="输入 API 密钥">
+                </div>
+                <input type="text" id="add-baseurl-input" placeholder="输入 Base URL (仅用于兼容API)">
                 <button onclick="addKeyToList()">添加</button>
             </div>
 
@@ -200,8 +206,16 @@
         const keysListContainer = document.getElementById('keys-list-container');
         const addPlatformSelect = document.getElementById('add-platform');
         const addKeyInput = document.getElementById('add-key-input');
+        const addBaseUrlInput = document.getElementById('add-baseurl-input');
 
-        const platforms = ['openai', 'anthropic', 'google', 'llama', 'baichuan', 'iflytek', 'zhipuai', 'wenxinyiyan', 'kimi', 'siliconflow', 'azure-openai'];
+        addPlatformSelect.addEventListener('change', () => {
+            if (addPlatformSelect.value === 'openai-compatible' || addPlatformSelect.value === 'azure-openai') {
+                addBaseUrlInput.style.display = 'block';
+            } else {
+                addBaseUrlInput.style.display = 'none';
+            }
+        });
+        addPlatformSelect.dispatchEvent(new Event('change'));
 
         function renderKeysList(keys) {
             keysListContainer.innerHTML = '';
@@ -209,9 +223,9 @@
                 keys.forEach((item, index) => {
                     const keyItem = document.createElement('div');
                     keyItem.className = 'key-item';
-                    keyItem.setAttribute('data-index', index);
+                    const displayUrl = item.baseURL ? ` (${item.baseURL.replace(/^https?:\/\//, '').slice(0, 25)}...)` : '';
                     keyItem.innerHTML = `
-                        <span>${item.platform}: ${item.key.slice(0, 4)}...${item.key.slice(-4)}</span>
+                        <span class="key-info">${item.platform}: ${item.key.slice(0, 4)}...${item.key.slice(-4)}${displayUrl}</span>
                         <button class="delete-btn" onclick="removeKeyFromList(${index})">删除</button>
                     `;
                     keysListContainer.appendChild(keyItem);
@@ -226,14 +240,30 @@
         function addKeyToList() {
             const platform = addPlatformSelect.value;
             const key = addKeyInput.value.trim();
-            if (key) {
-                currentKeys.push({ platform, key });
-                addKeyInput.value = '';
-                renderKeysList(currentKeys);
-                showStatus('密钥已添加至列表，请点击“更新密钥”保存', 'success');
-            } else {
+            const baseURL = addBaseUrlInput.value.trim();
+            
+            if (!key) {
                 showStatus('请输入有效的密钥', 'error');
+                return;
             }
+            
+            const newKey = { platform, key };
+            if (platform === 'openai-compatible' || platform === 'azure-openai') {
+                 if (!baseURL) {
+                    showStatus('请为该平台输入 Base URL', 'error');
+                    return;
+                }
+                newKey.baseURL = baseURL;
+            }
+
+            currentKeys.push(newKey);
+            addKeyInput.value = '';
+            addBaseUrlInput.value = '';
+            addPlatformSelect.value = 'openai';
+            addPlatformSelect.dispatchEvent(new Event('change'));
+            
+            renderKeysList(currentKeys);
+            showStatus('密钥已添加至列表，请点击“更新密钥”保存', 'success');
         }
 
         function removeKeyFromList(index) {
