@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>API 密钥管理</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; }
+        input, button, textarea { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
+        .hidden { display: none; }
+        #status { margin-top: 10px; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>API 密钥管理</h1>
+
+    <div id="login-form">
+        <p>请输入管理密码：</p>
+        <input type="password" id="password" placeholder="管理密码">
+        <button onclick="login()">登录</button>
+    </div>
+
+    <div id="manage-panel" class="hidden">
+        <p>当前 API 密钥列表 (每个密钥一行):</p>
+        <textarea id="api-keys-input" rows="10" placeholder="sk-xxxxxx&#10;sk-yyyyyy"></textarea>
+        <button onclick="updateKeys()">更新密钥</button>
+    </div>
+
+    <div id="status"></div>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const loginForm = document.getElementById('login-form');
+        const managePanel = document.getElementById('manage-panel');
+        let currentPassword = '';
+
+        async function login() {
+            const password = document.getElementById('password').value;
+            if (!password) {
+                showStatus('请输入密码。', 'error');
+                return;
+            }
+
+            try {
+                // 验证密码，这里我们不发送密码到服务器，而是直接使用它来做后续请求的认证
+                currentPassword = password;
+                
+                // 模拟一个请求来获取当前密钥，作为登录成功的一个标志
+                const response = await fetch('/api/keys');
+                if (!response.ok) {
+                    throw new Error('无法获取密钥，请检查密码是否正确。');
+                }
+                const data = await response.json();
+                
+                loginForm.classList.add('hidden');
+                managePanel.classList.remove('hidden');
+                document.getElementById('api-keys-input').value = data.join('\n');
+                showStatus('登录成功！', 'success');
+            } catch (error) {
+                showStatus('登录失败：' + error.message, 'error');
+            }
+        }
+        
+        async function updateKeys() {
+            const apiKeysInput = document.getElementById('api-keys-input').value;
+            const keys = apiKeysInput.split('\n').map(key => key.trim()).filter(key => key.length > 0);
+            
+            try {
+                const response = await fetch('/api/manage', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        password: currentPassword,
+                        keys: keys
+                    })
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    showStatus('密钥已成功更新！', 'success');
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                showStatus('更新失败：' + error.message, 'error');
+            }
+        }
+        
+        // 辅助函数：显示状态信息
+        function showStatus(message, type) {
+            statusDiv.textContent = message;
+            statusDiv.className = '';
+            statusDiv.classList.add('status', type);
+        }
+        
+        // 由于前端无法直接从环境变量读取密码，我们做个小改动，用一个临时的API来验证。
+        // 这段代码是为 `manage.js` 提供一个简单的GET接口来获取当前密钥列表
+        async function getKeysForDisplay() {
+            try {
+                const response = await fetch('/api/keys', {
+                    headers: {
+                       'x-password': document.getElementById('password').value
+                    }
+                });
+                if (response.ok) {
+                     const data = await response.json();
+                     loginForm.classList.add('hidden');
+                     managePanel.classList.remove('hidden');
+                     document.getElementById('api-keys-input').value = data.join('\n');
+                     showStatus('登录成功！', 'success');
+                } else {
+                     throw new Error('密码错误或服务错误');
+                }
+            } catch(error) {
+                showStatus('登录失败：' + error.message, 'error');
+            }
+        }
+        // 重写 login 函数
+        async function login() {
+            const password = document.getElementById('password').value;
+            if (!password) {
+                showStatus('请输入密码。', 'error');
+                return;
+            }
+            try {
+                // 发送请求到后端，后端进行密码验证并返回密钥列表
+                const response = await fetch('/api/keys', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: password })
+                });
+
+                if (response.ok) {
+                    const keys = await response.json();
+                    loginForm.classList.add('hidden');
+                    managePanel.classList.remove('hidden');
+                    document.getElementById('api-keys-input').value = keys.join('\n');
+                    showStatus('登录成功！', 'success');
+                    // 存储密码，以便后续更新操作
+                    window.sessionStorage.setItem('adminPassword', password);
+                } else {
+                    const error = await response.json();
+                    throw new Error(error.error);
+                }
+            } catch (error) {
+                showStatus('登录失败：' + error.message, 'error');
+            }
+        }
+        
+        async function updateKeys() {
+            const apiKeysInput = document.getElementById('api-keys-input').value;
+            const keys = apiKeysInput.split('\n').map(key => key.trim()).filter(key => key.length > 0);
+            const password = window.sessionStorage.getItem('adminPassword');
+
+            if (!password) {
+                showStatus('请先登录。', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/manage', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        password: password,
+                        keys: keys
+                    })
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    showStatus('密钥已成功更新！', 'success');
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                showStatus('更新失败：' + error.message, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
