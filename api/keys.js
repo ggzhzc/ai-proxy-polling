@@ -1,10 +1,10 @@
 import { kv } from '@vercel/kv';
 import crypto from 'crypto';
 
-// 生成一个类似 OpenAI 格式的随机 Key
+// 生成一个完全匹配 OpenAI 格式的随机 Key
 function generateOpenAIKey() {
-    const randomString = crypto.randomBytes(24).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-    return `sk-proxy-${randomString}`;
+    const randomHex = crypto.randomBytes(32).toString('hex');
+    return `sk-${randomHex}`;
 }
 
 export default async function handler(request, response) {
