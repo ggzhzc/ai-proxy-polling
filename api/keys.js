@@ -8,7 +8,6 @@ function generateOpenAIKey() {
 }
 
 export default async function handler(request, response) {
-  // 仅限 POST 请求，用于获取/生成统一 Key
   if (request.method !== 'POST') {
     return response.status(405).json({ error: 'Method Not Allowed' });
   }
@@ -23,7 +22,6 @@ export default async function handler(request, response) {
   try {
     if (action === 'get_unified_key') {
       let unifiedKey = await kv.get('unified_api_key');
-      // 如果没有，则生成一个
       if (!unifiedKey) {
           unifiedKey = generateOpenAIKey();
           await kv.set('unified_api_key', unifiedKey);
