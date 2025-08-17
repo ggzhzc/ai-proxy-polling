@@ -147,7 +147,9 @@
                     managePanel.classList.remove('hidden');
                     document.getElementById('api-keys-input').value = keys.join('\n');
                     showStatus('登录成功！', 'success');
-                    window.sessionStorage.setItem('adminPassword', password);
+                    // 存储密码和当前时间戳
+                    localStorage.setItem('adminPassword', password);
+                    localStorage.setItem('loginTimestamp', Date.now());
                 } else {
                     const error = await response.json();
                     throw new Error(error.error);
@@ -160,10 +162,22 @@
         async function updateKeys() {
             const apiKeysInput = document.getElementById('api-keys-input').value;
             const keys = apiKeysInput.split('\n').map(key => key.trim()).filter(key => key.length > 0);
-            const password = window.sessionStorage.getItem('adminPassword');
+            // 从 localStorage 读取密码
+            const password = localStorage.getItem('adminPassword');
+            const timestamp = localStorage.getItem('loginTimestamp');
 
-            if (!password) {
+            if (!password || !timestamp) {
                 showStatus('请先登录。', 'error');
+                return;
+            }
+
+            const oneHourInMs = 60 * 60 * 1000;
+            if (Date.now() - timestamp > oneHourInMs) {
+                showStatus('会话已过期，请重新登录。', 'error');
+                localStorage.removeItem('adminPassword');
+                localStorage.removeItem('loginTimestamp');
+                // 重新加载页面以显示登录表单
+                setTimeout(() => window.location.reload(), 1500);
                 return;
             }
             
@@ -193,6 +207,45 @@
             statusDiv.className = '';
             statusDiv.classList.add('status', type);
         }
+
+        // 新增：页面加载时检查 localStorage 中是否有密码且未过期
+        (async function checkLoginState() {
+            const password = localStorage.getItem('adminPassword');
+            const timestamp = localStorage.getItem('loginTimestamp');
+            
+            if (password && timestamp) {
+                const oneHourInMs = 60 * 60 * 1000;
+                if (Date.now() - timestamp > oneHourInMs) {
+                    // 会话过期
+                    localStorage.removeItem('adminPassword');
+                    localStorage.removeItem('loginTimestamp');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/keys', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ password: password })
+                    });
+                    if (response.ok) {
+                        const keys = await response.json();
+                        loginForm.classList.add('hidden');
+                        managePanel.classList.remove('hidden');
+                        document.getElementById('api-keys-input').value = keys.join('\n');
+                        showStatus('已自动登录', 'success');
+                    } else {
+                        // 密码可能已过期或被修改，清除本地存储
+                        localStorage.removeItem('adminPassword');
+                        localStorage.removeItem('loginTimestamp');
+                    }
+                } catch (error) {
+                    localStorage.removeItem('adminPassword');
+                    localStorage.removeItem('loginTimestamp');
+                    console.error('Auto login failed:', error);
+                }
+            }
+        })();
     </script>
 </body>
 </html>
