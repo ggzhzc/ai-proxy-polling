@@ -1,27 +1,16 @@
 {
-  "rewrites": [
+  "routes": [
     {
-      "source": "/proxy",
-      "destination": "/api/proxy.js"
+      "src": "/admin",
+      "dest": "/public/index.html"
     },
     {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
     },
     {
-      "source": "/(.*)",
-      "destination": "/public/index.html"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/public/index.html",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-cache, no-store, must-revalidate"
-        }
-      ]
+      "src": "/(.*)",
+      "dest": "/api/proxy.js"
     }
   ]
 }
