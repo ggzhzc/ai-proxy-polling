@@ -48,7 +48,7 @@
             margin-bottom: 20px;
         }
 
-        input, textarea {
+        input, textarea, select {
             width: 100%;
             padding: 12px;
             margin-top: 8px;
@@ -83,6 +83,26 @@
         .hidden {
             display: none;
         }
+        
+        .key-entry {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .key-entry input, .key-entry select {
+            margin: 0;
+        }
+
+        .key-entry button {
+            width: auto;
+            background-color: #E74C3C;
+        }
+        
+        #add-key-btn {
+            background-color: #2ECC71;
+            margin-top: 15px;
+        }
 
         #status {
             margin-top: 20px;
@@ -114,8 +134,9 @@
         </div>
 
         <div id="manage-panel" class="hidden">
-            <p>当前 API 密钥列表 (每个密钥一行):</p>
-            <textarea id="api-keys-input" rows="10" placeholder="sk-xxxxxx&#10;sk-yyyyyy"></textarea>
+            <p>管理你的 API 密钥 (每个密钥和平台为一个条目):</p>
+            <div id="api-keys-container"></div>
+            <button id="add-key-btn" onclick="addKeyField()">添加新密钥</button>
             <button onclick="updateKeys()">更新密钥</button>
         </div>
 
@@ -126,6 +147,34 @@
         const statusDiv = document.getElementById('status');
         const loginForm = document.getElementById('login-form');
         const managePanel = document.getElementById('manage-panel');
+        const keysContainer = document.getElementById('api-keys-container');
+
+        const platforms = ['openai', 'anthropic', 'google', 'llama', 'baichuan', 'iflytek', 'zhipuai', 'wenxinyiyan', 'kimi', 'siliconflow', 'azure-openai'];
+
+        function addKeyField(key = '', platform = 'openai') {
+            const entryDiv = document.createElement('div');
+            entryDiv.className = 'key-entry';
+            entryDiv.innerHTML = `
+                <select>
+                    ${platforms.map(p => `<option value="${p}" ${p === platform ? 'selected' : ''}>${p}</option>`).join('')}
+                </select>
+                <input type="text" placeholder="输入 API 密钥" value="${key}">
+                <button onclick="this.parentNode.remove()">移除</button>
+            `;
+            keysContainer.appendChild(entryDiv);
+        }
+
+        function getKeysFromFields() {
+            const keys = [];
+            document.querySelectorAll('.key-entry').forEach(entry => {
+                const platform = entry.querySelector('select').value;
+                const key = entry.querySelector('input').value.trim();
+                if (key) {
+                    keys.push({ platform, key });
+                }
+            });
+            return keys;
+        }
 
         async function login() {
             const password = document.getElementById('password').value;
@@ -142,12 +191,16 @@
                 });
 
                 if (response.ok) {
-                    const keys = await response.json();
+                    const savedKeys = await response.json();
                     loginForm.classList.add('hidden');
                     managePanel.classList.remove('hidden');
-                    document.getElementById('api-keys-input').value = keys.join('\n');
+                    keysContainer.innerHTML = '';
+                    if (savedKeys && savedKeys.length > 0) {
+                        savedKeys.forEach(item => addKeyField(item.key, item.platform));
+                    } else {
+                        addKeyField();
+                    }
                     showStatus('登录成功！', 'success');
-                    // 存储密码和当前时间戳
                     localStorage.setItem('adminPassword', password);
                     localStorage.setItem('loginTimestamp', Date.now());
                 } else {
@@ -160,9 +213,7 @@
         }
         
         async function updateKeys() {
-            const apiKeysInput = document.getElementById('api-keys-input').value;
-            const keys = apiKeysInput.split('\n').map(key => key.trim()).filter(key => key.length > 0);
-            // 从 localStorage 读取密码
+            const keys = getKeysFromFields();
             const password = localStorage.getItem('adminPassword');
             const timestamp = localStorage.getItem('loginTimestamp');
 
@@ -176,7 +227,6 @@
                 showStatus('会话已过期，请重新登录。', 'error');
                 localStorage.removeItem('adminPassword');
                 localStorage.removeItem('loginTimestamp');
-                // 重新加载页面以显示登录表单
                 setTimeout(() => window.location.reload(), 1500);
                 return;
             }
@@ -208,7 +258,6 @@
             statusDiv.classList.add('status', type);
         }
 
-        // 新增：页面加载时检查 localStorage 中是否有密码且未过期
         (async function checkLoginState() {
             const password = localStorage.getItem('adminPassword');
             const timestamp = localStorage.getItem('loginTimestamp');
@@ -216,7 +265,6 @@
             if (password && timestamp) {
                 const oneHourInMs = 60 * 60 * 1000;
                 if (Date.now() - timestamp > oneHourInMs) {
-                    // 会话过期
                     localStorage.removeItem('adminPassword');
                     localStorage.removeItem('loginTimestamp');
                     return;
@@ -229,13 +277,16 @@
                         body: JSON.stringify({ password: password })
                     });
                     if (response.ok) {
-                        const keys = await response.json();
+                        const savedKeys = await response.json();
                         loginForm.classList.add('hidden');
                         managePanel.classList.remove('hidden');
-                        document.getElementById('api-keys-input').value = keys.join('\n');
+                        if (savedKeys && savedKeys.length > 0) {
+                            savedKeys.forEach(item => addKeyField(item.key, item.platform));
+                        } else {
+                            addKeyField();
+                        }
                         showStatus('已自动登录', 'success');
                     } else {
-                        // 密码可能已过期或被修改，清除本地存储
                         localStorage.removeItem('adminPassword');
                         localStorage.removeItem('loginTimestamp');
                     }
