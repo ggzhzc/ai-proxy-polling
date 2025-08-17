@@ -12,5 +12,16 @@
       "source": "/(.*)",
       "destination": "/api/proxy.js"
     }
+  ],
+  "headers": [
+    {
+      "source": "/public/index.html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    }
   ]
 }
