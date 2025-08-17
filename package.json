@@ -7,7 +7,13 @@
   },
   "dependencies": {
     "@vercel/kv": "^0.2.2",
-    "openai": "^4.0.0"
+    "openai": "^4.0.0",
+    "anthropic": "^0.23.0",
+    "@google/generative-ai": "^0.11.3",
+    "baichuan-api": "^1.0.0",
+    "zhipu-ai": "^1.0.0",
+    "axios": "^1.6.8",
+    "node-fetch": "^3.3.2"
   },
   "license": "MIT"
 }
