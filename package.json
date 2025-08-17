@@ -6,13 +6,14 @@
     "start": "vercel dev"
   },
   "dependencies": {
-    "@vercel/kv": "^0.2.2",
-    "openai": "^4.0.0",
-    "@anthropic-ai/sdk": "latest",
-    "@google/generative-ai": "latest",
-    "axios": "^1.6.8",
-    "node-fetch": "^3.3.2",
-    "crypto": "^1.0.1"
+    "@vercel/kv": "0.2.2",
+    "openai": "4.0.0",
+    "@anthropic-ai/sdk": "0.25.0",
+    "@google/generative-ai": "0.11.3",
+    "axios": "1.6.8",
+    "node-fetch": "3.3.2",
+    "crypto": "1.0.1",
+    "jsonwebtoken": "9.0.2"
   },
   "license": "MIT"
 }
