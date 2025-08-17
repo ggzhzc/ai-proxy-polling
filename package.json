@@ -8,7 +8,7 @@
   "dependencies": {
     "@vercel/kv": "^0.2.2",
     "openai": "^4.0.0",
-    "anthropic": "latest",
+    "@anthropic-ai/sdk": "latest",
     "@google/generative-ai": "latest",
     "axios": "^1.6.8",
     "node-fetch": "^3.3.2",
