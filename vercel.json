@@ -1,8 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/admin",
-      "destination": "/public/index.html"
+      "source": "/proxy",
+      "destination": "/api/proxy.js"
     },
     {
       "source": "/api/(.*)",
@@ -10,7 +10,18 @@
     },
     {
       "source": "/(.*)",
-      "destination": "/api/proxy.js"
+      "destination": "/public/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/public/index.html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
     }
   ]
 }
