@@ -26,8 +26,6 @@
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            opacity: 0;
-            transition: opacity 0.5s;
         }
 
         .container {
@@ -254,11 +252,11 @@
         }
     </style>
 </head>
-<body style="opacity: 0;">
+<body>
     <div class="container">
         <h1>API 密钥管理</h1>
 
-        <div id="login-form">
+        <div id="login-form" class="hidden">
             <p class="sub-title">请输入管理密码：</p>
             <input type="password" id="password" placeholder="管理密码">
             <div class="main-buttons">
@@ -584,3 +582,4 @@
     </script>
 </body>
 </html>
+}
