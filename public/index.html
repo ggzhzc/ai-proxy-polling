@@ -189,8 +189,8 @@
             <div class="key-display-container">
                 <p>将此 Key 填写到第三方软件中：</p>
                 <div id="unified-key-display" class="key-display"></div>
-                <div style="margin-top: 10px;">
-                    <button onclick="getUnifiedKey()">刷新</button>
+                <div style="margin-top: 10px; display: flex; gap: 10px;">
+                    <button onclick="copyUnifiedKey()" style="background-color: #2ECC71;">复制</button>
                     <button onclick="resetUnifiedKey()">重置 Key</button>
                 </div>
             </div>
@@ -327,7 +327,7 @@
                     showStatus('登录成功！', 'success');
                     localStorage.setItem('adminPassword', password);
                     localStorage.setItem('loginTimestamp', Date.now());
-                    getUnifiedKey(); // 登录成功后获取统一Key
+                    getUnifiedKey();
                 } else {
                     const error = await response.json();
                     throw new Error(error.error);
@@ -421,6 +421,21 @@
             } catch(error) {
                 console.error(error);
                 showStatus('重置失败', 'error');
+            }
+        }
+
+        async function copyUnifiedKey() {
+            try {
+                const keyToCopy = unifiedKeyDisplay.textContent;
+                if (keyToCopy && keyToCopy !== '获取失败') {
+                    await navigator.clipboard.writeText(keyToCopy);
+                    showStatus('已成功复制到剪贴板！', 'success');
+                } else {
+                    showStatus('没有可复制的 Key', 'error');
+                }
+            } catch (err) {
+                showStatus('复制失败，请手动复制', 'error');
+                console.error('Copy failed:', err);
             }
         }
 
