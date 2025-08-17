@@ -2,7 +2,7 @@ import { kv } from '@vercel/kv';
 import { OpenAI } from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import axios from 'axios';
+const axios = require('axios');
 
 async function handleRequest(provider, requestBody) {
   const modelToUse = provider.model;
