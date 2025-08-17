@@ -11,8 +11,7 @@
     "anthropic": "latest",
     "@google/generative-ai": "latest",
     "axios": "^1.6.8",
-    "node-fetch": "^3.3.2",
-    "uuid": "^9.0.0"
+    "node-fetch": "^3.3.2"
   },
   "license": "MIT"
 }
