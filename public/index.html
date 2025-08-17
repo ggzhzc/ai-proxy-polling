@@ -12,6 +12,7 @@
             --error-text: #C62828;
             --border-color: #E0E0E0;
             --shadow-light: rgba(0, 0, 0, 0.05);
+            --delete-color: #E74C3C;
         }
 
         body {
@@ -23,6 +24,8 @@
             align-items: center;
             min-height: 100vh;
             margin: 0;
+            opacity: 0;
+            transition: opacity 0.5s;
         }
 
         .container {
@@ -31,8 +34,7 @@
             border-radius: 12px;
             box-shadow: 0 4px 12px var(--shadow-light);
             width: 100%;
-            max-width: 450px;
-            text-align: center;
+            max-width: 600px;
             box-sizing: border-box;
         }
         
@@ -40,68 +42,90 @@
             color: #2C3E50;
             font-size: 24px;
             margin-bottom: 30px;
+            text-align: center;
         }
-
-        p {
-            color: #777;
-            margin-top: 0;
-            margin-bottom: 20px;
-        }
-
-        input, textarea, select {
-            width: 100%;
-            padding: 12px;
-            margin-top: 8px;
-            margin-bottom: 20px;
-            box-sizing: border-box;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            font-size: 16px;
-        }
-
-        textarea {
-            resize: vertical;
-        }
-
-        button {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            background-color: var(--primary-color);
-            color: #fff;
-            font-size: 16px;
+        
+        .section-title {
+            color: #2C3E50;
+            font-size: 18px;
             font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        button:hover {
-            background-color: #3a75b6;
+            margin-top: 30px;
+            margin-bottom: 15px;
         }
 
         .hidden {
             display: none;
         }
         
-        .key-entry {
+        .add-form {
             display: flex;
             gap: 10px;
-            margin-bottom: 10px;
-        }
-
-        .key-entry input, .key-entry select {
-            margin: 0;
-        }
-
-        .key-entry button {
-            width: auto;
-            background-color: #E74C3C;
+            align-items: center;
         }
         
-        #add-key-btn {
-            background-color: #2ECC71;
-            margin-top: 15px;
+        .add-form input, .add-form select {
+            flex-grow: 1;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+        
+        .add-form button {
+            width: auto;
+            min-width: 80px;
+            background-color: var(--primary-color);
+        }
+
+        .keys-list {
+            margin-top: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .key-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .key-item:last-child {
+            border-bottom: none;
+        }
+        
+        .key-item span {
+            word-break: break-all;
+            margin-right: 10px;
+            flex-grow: 1;
+        }
+
+        .key-item .delete-btn {
+            background-color: var(--delete-color);
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .key-item .delete-btn:hover {
+            background-color: #c0392b;
+        }
+
+        .main-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .main-buttons button {
+            width: 100%;
         }
 
         #status {
@@ -110,6 +134,7 @@
             border-radius: 8px;
             font-weight: bold;
             font-size: 14px;
+            text-align: center;
         }
 
         .success {
@@ -123,21 +148,46 @@
         }
     </style>
 </head>
-<body>
+<body style="opacity: 0;">
     <div class="container">
         <h1>API 密钥管理</h1>
 
-        <div id="login-form">
-            <p>请输入管理密码：</p>
+        <div id="login-form" class="hidden">
+            <p style="text-align: center;">请输入管理密码：</p>
             <input type="password" id="password" placeholder="管理密码">
-            <button onclick="login()">登录</button>
+            <div class="main-buttons">
+                <button onclick="login()">登录</button>
+            </div>
         </div>
 
         <div id="manage-panel" class="hidden">
-            <p>管理你的 API 密钥 (每个密钥和平台为一个条目):</p>
-            <div id="api-keys-container"></div>
-            <button id="add-key-btn" onclick="addKeyField()">添加新密钥</button>
-            <button onclick="updateKeys()">更新密钥</button>
+            <p class="section-title">添加新密钥</p>
+            <div class="add-form">
+                <select id="add-platform">
+                    <option value="openai">openai</option>
+                    <option value="anthropic">anthropic</option>
+                    <option value="google">google</option>
+                    <option value="llama">llama</option>
+                    <option value="baichuan">baichuan</option>
+                    <option value="iflytek">iflytek</option>
+                    <option value="zhipuai">zhipuai</option>
+                    <option value="wenxinyiyan">wenxinyiyan</option>
+                    <option value="kimi">kimi</option>
+                    <option value="siliconflow">siliconflow</option>
+                    <option value="azure-openai">azure-openai</option>
+                </select>
+                <input type="text" id="add-key-input" placeholder="输入 API 密钥">
+                <button onclick="addKeyToList()">添加</button>
+            </div>
+
+            <p class="section-title">已添加的密钥</p>
+            <div class="keys-list" id="keys-list-container">
+                <p style="text-align:center; color:#999;">暂无密钥</p>
+            </div>
+
+            <div class="main-buttons">
+                <button onclick="updateKeys()">更新密钥</button>
+            </div>
         </div>
 
         <div id="status"></div>
@@ -147,33 +197,49 @@
         const statusDiv = document.getElementById('status');
         const loginForm = document.getElementById('login-form');
         const managePanel = document.getElementById('manage-panel');
-        const keysContainer = document.getElementById('api-keys-container');
+        const keysListContainer = document.getElementById('keys-list-container');
+        const addPlatformSelect = document.getElementById('add-platform');
+        const addKeyInput = document.getElementById('add-key-input');
 
         const platforms = ['openai', 'anthropic', 'google', 'llama', 'baichuan', 'iflytek', 'zhipuai', 'wenxinyiyan', 'kimi', 'siliconflow', 'azure-openai'];
 
-        function addKeyField(key = '', platform = 'openai') {
-            const entryDiv = document.createElement('div');
-            entryDiv.className = 'key-entry';
-            entryDiv.innerHTML = `
-                <select>
-                    ${platforms.map(p => `<option value="${p}" ${p === platform ? 'selected' : ''}>${p}</option>`).join('')}
-                </select>
-                <input type="text" placeholder="输入 API 密钥" value="${key}">
-                <button onclick="this.parentNode.remove()">移除</button>
-            `;
-            keysContainer.appendChild(entryDiv);
+        function renderKeysList(keys) {
+            keysListContainer.innerHTML = '';
+            if (keys && keys.length > 0) {
+                keys.forEach((item, index) => {
+                    const keyItem = document.createElement('div');
+                    keyItem.className = 'key-item';
+                    keyItem.setAttribute('data-index', index);
+                    keyItem.innerHTML = `
+                        <span>${item.platform}: ${item.key.slice(0, 4)}...${item.key.slice(-4)}</span>
+                        <button class="delete-btn" onclick="removeKeyFromList(${index})">删除</button>
+                    `;
+                    keysListContainer.appendChild(keyItem);
+                });
+            } else {
+                keysListContainer.innerHTML = `<p style="text-align:center; color:#999;">暂无密钥</p>`;
+            }
+        }
+        
+        let currentKeys = [];
+
+        function addKeyToList() {
+            const platform = addPlatformSelect.value;
+            const key = addKeyInput.value.trim();
+            if (key) {
+                currentKeys.push({ platform, key });
+                addKeyInput.value = '';
+                renderKeysList(currentKeys);
+                showStatus('密钥已添加至列表，请点击“更新密钥”保存', 'success');
+            } else {
+                showStatus('请输入有效的密钥', 'error');
+            }
         }
 
-        function getKeysFromFields() {
-            const keys = [];
-            document.querySelectorAll('.key-entry').forEach(entry => {
-                const platform = entry.querySelector('select').value;
-                const key = entry.querySelector('input').value.trim();
-                if (key) {
-                    keys.push({ platform, key });
-                }
-            });
-            return keys;
+        function removeKeyFromList(index) {
+            currentKeys.splice(index, 1);
+            renderKeysList(currentKeys);
+            showStatus('密钥已从列表中移除，请点击“更新密钥”保存', 'success');
         }
 
         async function login() {
@@ -194,12 +260,8 @@
                     const savedKeys = await response.json();
                     loginForm.classList.add('hidden');
                     managePanel.classList.remove('hidden');
-                    keysContainer.innerHTML = '';
-                    if (savedKeys && savedKeys.length > 0) {
-                        savedKeys.forEach(item => addKeyField(item.key, item.platform));
-                    } else {
-                        addKeyField();
-                    }
+                    currentKeys = savedKeys || [];
+                    renderKeysList(currentKeys);
                     showStatus('登录成功！', 'success');
                     localStorage.setItem('adminPassword', password);
                     localStorage.setItem('loginTimestamp', Date.now());
@@ -213,7 +275,6 @@
         }
         
         async function updateKeys() {
-            const keys = getKeysFromFields();
             const password = localStorage.getItem('adminPassword');
             const timestamp = localStorage.getItem('loginTimestamp');
 
@@ -237,7 +298,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         password: password,
-                        keys: keys
+                        keys: currentKeys
                     })
                 });
                 
@@ -254,8 +315,8 @@
         
         function showStatus(message, type) {
             statusDiv.textContent = message;
-            statusDiv.className = '';
-            statusDiv.classList.add('status', type);
+            statusDiv.className = 'status';
+            statusDiv.classList.add(type);
         }
 
         (async function checkLoginState() {
@@ -264,38 +325,31 @@
             
             if (password && timestamp) {
                 const oneHourInMs = 60 * 60 * 1000;
-                if (Date.now() - timestamp > oneHourInMs) {
-                    localStorage.removeItem('adminPassword');
-                    localStorage.removeItem('loginTimestamp');
-                    return;
-                }
-
-                try {
-                    const response = await fetch('/api/keys', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ password: password })
-                    });
-                    if (response.ok) {
-                        const savedKeys = await response.json();
-                        loginForm.classList.add('hidden');
-                        managePanel.classList.remove('hidden');
-                        if (savedKeys && savedKeys.length > 0) {
-                            savedKeys.forEach(item => addKeyField(item.key, item.platform));
-                        } else {
-                            addKeyField();
+                if (Date.now() - timestamp <= oneHourInMs) {
+                    try {
+                        const response = await fetch('/api/keys', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ password: password })
+                        });
+                        if (response.ok) {
+                            const savedKeys = await response.json();
+                            loginForm.classList.add('hidden');
+                            managePanel.classList.remove('hidden');
+                            currentKeys = savedKeys || [];
+                            renderKeysList(currentKeys);
+                            showStatus('已自动登录', 'success');
+                            document.body.style.opacity = '1';
+                            return;
                         }
-                        showStatus('已自动登录', 'success');
-                    } else {
-                        localStorage.removeItem('adminPassword');
-                        localStorage.removeItem('loginTimestamp');
+                    } catch (error) {
+                        console.error('Auto login failed:', error);
                     }
-                } catch (error) {
-                    localStorage.removeItem('adminPassword');
-                    localStorage.removeItem('loginTimestamp');
-                    console.error('Auto login failed:', error);
                 }
             }
+
+            loginForm.classList.remove('hidden');
+            document.body.style.opacity = '1';
         })();
     </script>
 </body>
