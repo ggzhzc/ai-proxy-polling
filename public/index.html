@@ -173,16 +173,20 @@
             <div class="add-form">
                 <div class="input-group">
                     <select id="add-platform">
-                        <option value="openai">openai</option>
-                        <option value="anthropic">anthropic</option>
-                        <option value="google">google</option>
-                        <option value="qwen">qwen</option>
-                        <option value="azure-openai">azure-openai</option>
-                        <option value="openai-compatible">openai-compatible</option>
+                        <option value="openai">OpenAI</option>
+                        <option value="anthropic">Anthropic</option>
+                        <option value="google">Google (Gemini)</option>
+                        <option value="qwen">阿里通义千问</option>
+                        <option value="azure-openai">Azure OpenAI</option>
+                        <option value="zhipuai">智谱 AI (GLM)</option>
+                        <option value="baichuan">百川</option>
+                        <option value="wenxinyiyan">文心一言</option>
+                        <option value="kimi">Kimi</option>
+                        <option value="openai-compatible">OpenAI 兼容 (Llama, Mistral)</option>
                     </select>
                     <input type="text" id="add-key-input" placeholder="输入 API 密钥">
                 </div>
-                <input type="text" id="add-baseurl-input" placeholder="输入 Base URL (仅用于兼容API)">
+                <input type="text" id="add-baseurl-input" placeholder="输入 Base URL (仅用于兼容/Azure/非官方地址)">
                 <button onclick="addKeyToList()">添加</button>
             </div>
 
@@ -208,8 +212,22 @@
         const addKeyInput = document.getElementById('add-key-input');
         const addBaseUrlInput = document.getElementById('add-baseurl-input');
 
+        const platformDisplayNames = {
+            'openai': 'OpenAI',
+            'anthropic': 'Anthropic',
+            'google': 'Google (Gemini)',
+            'qwen': '阿里通义千问',
+            'azure-openai': 'Azure OpenAI',
+            'zhipuai': '智谱 AI (GLM)',
+            'baichuan': '百川',
+            'wenxinyiyan': '文心一言',
+            'kimi': 'Kimi',
+            'openai-compatible': 'OpenAI 兼容 (Llama, Mistral)',
+        };
+
         addPlatformSelect.addEventListener('change', () => {
-            if (addPlatformSelect.value === 'openai-compatible' || addPlatformSelect.value === 'azure-openai') {
+            const selectedPlatform = addPlatformSelect.value;
+            if (selectedPlatform === 'openai-compatible' || selectedPlatform === 'azure-openai') {
                 addBaseUrlInput.style.display = 'block';
             } else {
                 addBaseUrlInput.style.display = 'none';
@@ -223,9 +241,10 @@
                 keys.forEach((item, index) => {
                     const keyItem = document.createElement('div');
                     keyItem.className = 'key-item';
+                    const displayName = platformDisplayNames[item.platform] || item.platform;
                     const displayUrl = item.baseURL ? ` (${item.baseURL.replace(/^https?:\/\//, '').slice(0, 25)}...)` : '';
                     keyItem.innerHTML = `
-                        <span class="key-info">${item.platform}: ${item.key.slice(0, 4)}...${item.key.slice(-4)}${displayUrl}</span>
+                        <span class="key-info">${displayName}: ${item.key.slice(0, 4)}...${item.key.slice(-4)}${displayUrl}</span>
                         <button class="delete-btn" onclick="removeKeyFromList(${index})">删除</button>
                     `;
                     keysListContainer.appendChild(keyItem);
