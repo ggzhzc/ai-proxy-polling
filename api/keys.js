@@ -1,9 +1,9 @@
 import { kv } from '@vercel/kv';
 import crypto from 'crypto';
 
-// 生成一个完全匹配 OpenAI 格式的随机 Key
+// 生成一个完美匹配 OpenAI 密钥长度的随机 Key
 function generateOpenAIKey() {
-    const randomHex = crypto.randomBytes(32).toString('hex');
+    const randomHex = crypto.randomBytes(24).toString('hex');
     return `sk-${randomHex}`;
 }
 
