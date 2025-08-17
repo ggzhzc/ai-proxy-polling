@@ -2,7 +2,6 @@ import { kv } from '@vercel/kv';
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { ZhipuAI } from 'zhipu-ai';
 import axios from 'axios';
 
 // 统一的请求处理函数，处理不同平台的API调用
@@ -89,16 +88,17 @@ async function handleRequest(provider, requestBody) {
       });
       return kimiCompletion;
       
-    case 'zhipuai':
-      const zhipuClient = new ZhipuAI({
+    case 'llama':
+      const llamaClient = new OpenAI({
         apiKey: provider.key,
+        baseURL: 'https://api.together.xyz/v1',
       });
-      const zhipuCompletion = await zhipuClient.chat.completions.create({
-        model: requestBody.model || 'glm-4',
+      const llamaCompletion = await llamaClient.chat.completions.create({
+        model: requestBody.model,
         messages: requestBody.messages,
         stream: false,
       });
-      return zhipuCompletion;
+      return llamaCompletion;
 
     case 'openai-compatible':
       const compatibleClient = new OpenAI({
