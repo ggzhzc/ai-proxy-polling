@@ -4,7 +4,6 @@ import Anthropic from 'anthropic';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import axios from 'axios';
 
-// 统一的请求处理函数，处理不同平台的API调用
 async function handleRequest(provider, requestBody) {
   const modelToUse = provider.model;
   
