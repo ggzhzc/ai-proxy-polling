@@ -154,6 +154,22 @@
             background-color: var(--error-bg);
             color: var(--error-text);
         }
+
+        .key-display-container {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+
+        .key-display {
+            font-family: monospace;
+            word-break: break-all;
+            background-color: #f1f3f5;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body style="opacity: 0;">
@@ -169,7 +185,17 @@
         </div>
 
         <div id="manage-panel" class="hidden">
-            <p class="section-title">添加新密钥</p>
+            <p class="section-title">统一代理 API Key</p>
+            <div class="key-display-container">
+                <p>将此 Key 填写到第三方软件中：</p>
+                <div id="unified-key-display" class="key-display"></div>
+                <div style="margin-top: 10px;">
+                    <button onclick="getUnifiedKey()">刷新</button>
+                    <button onclick="resetUnifiedKey()">重置 Key</button>
+                </div>
+            </div>
+
+            <p class="section-title">管理后端 API 密钥</p>
             <div class="add-form">
                 <div class="input-group">
                     <select id="add-platform">
@@ -210,6 +236,7 @@
         const addPlatformSelect = document.getElementById('add-platform');
         const addKeyInput = document.getElementById('add-key-input');
         const addBaseUrlInput = document.getElementById('add-baseurl-input');
+        const unifiedKeyDisplay = document.getElementById('unified-key-display');
 
         const platformsWithBaseUrl = ['openai-compatible', 'azure-openai'];
 
@@ -300,6 +327,7 @@
                     showStatus('登录成功！', 'success');
                     localStorage.setItem('adminPassword', password);
                     localStorage.setItem('loginTimestamp', Date.now());
+                    getUnifiedKey(); // 登录成功后获取统一Key
                 } else {
                     const error = await response.json();
                     throw new Error(error.error);
@@ -348,6 +376,54 @@
             }
         }
         
+        async function getUnifiedKey() {
+            const password = localStorage.getItem('adminPassword');
+            if (!password) return;
+
+            try {
+                const response = await fetch('/api/keys', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: password, action: 'get_unified_key' })
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    unifiedKeyDisplay.textContent = data.unifiedKey;
+                } else {
+                    throw new Error('Failed to get unified key.');
+                }
+            } catch(error) {
+                console.error(error);
+                unifiedKeyDisplay.textContent = '获取失败';
+            }
+        }
+
+        async function resetUnifiedKey() {
+            if (!confirm('确定要重置统一 API Key 吗？这将导致旧 Key 失效。')) {
+                return;
+            }
+            const password = localStorage.getItem('adminPassword');
+            if (!password) return;
+
+            try {
+                const response = await fetch('/api/keys', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: password, action: 'reset_unified_key' })
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    unifiedKeyDisplay.textContent = data.unifiedKey;
+                    showStatus('统一 Key 已重置！', 'success');
+                } else {
+                    throw new Error('Failed to reset unified key.');
+                }
+            } catch(error) {
+                console.error(error);
+                showStatus('重置失败', 'error');
+            }
+        }
+
         function showStatus(message, type) {
             statusDiv.textContent = message;
             statusDiv.className = 'status';
@@ -374,6 +450,7 @@
                             currentKeys = savedKeys || [];
                             renderKeysList(currentKeys);
                             showStatus('已自动登录', 'success');
+                            getUnifiedKey();
                             document.body.style.opacity = '1';
                             return;
                         }
