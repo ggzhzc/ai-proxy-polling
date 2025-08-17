@@ -1,162 +1,586 @@
-import { kv } from '@vercel/kv';
-import OpenAI from 'openai';
-import Anthropic from '@anthropic-ai/sdk';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import axios from 'axios';
-
-// 统一的请求处理函数，处理不同平台的API调用
-async function handleRequest(provider, requestBody) {
-  const modelToUse = provider.model;
-  
-  // 检查是否配置了模型，如果没有，则抛出错误
-  if (!modelToUse) {
-    throw new Error(`Platform "${provider.platform}" has no model configured. Please update in the admin panel.`);
-  }
-
-  switch (provider.platform) {
-    case 'openai':
-      const openai = new OpenAI({ 
-        apiKey: provider.key
-      });
-      const openaiCompletion = await openai.chat.completions.create({
-        model: modelToUse,
-        messages: requestBody.messages,
-        stream: requestBody.stream || false,
-      });
-      return openaiCompletion;
-
-    case 'azure-openai':
-      const azureOpenai = new OpenAI({ 
-        apiKey: provider.key,
-        baseURL: provider.baseURL
-      });
-      const azureOpenaiCompletion = await azureOpenai.chat.completions.create({
-        model: modelToUse,
-        messages: requestBody.messages,
-        stream: requestBody.stream || false,
-      });
-      return azureOpenaiCompletion;
-
-    case 'anthropic':
-      const anthropic = new Anthropic({ apiKey: provider.key });
-      const anthropicCompletion = await anthropic.messages.create({
-        model: modelToUse,
-        max_tokens: requestBody.max_tokens || 1024,
-        messages: requestBody.messages,
-        stream: requestBody.stream || false,
-      });
-      return anthropicCompletion;
-    
-    case 'google':
-      const genAI = new GoogleGenerativeAI(provider.key);
-      const model = genAI.getGenerativeModel({ model: modelToUse });
-      const chat = model.startChat();
-      const googleCompletion = await chat.sendMessage(requestBody.messages[requestBody.messages.length - 1].content);
-      return googleCompletion.response;
-
-    case 'qwen':
-      const qwenResponse = await axios.post(
-        'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation',
-        {
-          model: modelToUse,
-          input: {
-            messages: requestBody.messages,
-          },
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${provider.key}`
-          },
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>API 密钥管理</title>
+    <style>
+        :root {
+            --primary-color: #4A90E2;
+            --secondary-color: #34495E;
+            --success-bg: #E8F5E9;
+            --success-text: #2E7D32;
+            --error-bg: #FBEAEA;
+            --error-text: #C62828;
+            --border-color: #E0E0E0;
+            --shadow-light: rgba(0, 0, 0, 0.05);
+            --delete-color: #E74C3C;
+            --copy-color: #2ECC71;
         }
-      );
-      return qwenResponse.data;
-      
-    case 'deepseek':
-      const deepseekClient = new OpenAI({
-        apiKey: provider.key,
-        baseURL: 'https://api.deepseek.com/v1',
-      });
-      const deepseekCompletion = await deepseekClient.chat.completions.create({
-        model: modelToUse,
-        messages: requestBody.messages,
-        stream: requestBody.stream || false,
-      });
-      return deepseekCompletion;
-      
-    case 'kimi':
-      const kimiClient = new OpenAI({
-        apiKey: provider.key,
-        baseURL: 'https://api.moonshot.cn/v1',
-      });
-      const kimiCompletion = await kimiClient.chat.completions.create({
-        model: modelToUse,
-        messages: requestBody.messages,
-        stream: requestBody.stream || false,
-      });
-      return kimiCompletion;
-      
-    case 'llama':
-      const llamaClient = new OpenAI({
-        apiKey: provider.key,
-        baseURL: 'https://api.together.xyz/v1',
-      });
-      const llamaCompletion = await llamaClient.chat.completions.create({
-        model: modelToUse,
-        messages: requestBody.messages,
-        stream: requestBody.stream || false,
-      });
-      return llamaCompletion;
 
-    case 'openai-compatible':
-      const compatibleClient = new OpenAI({
-        apiKey: provider.key,
-        baseURL: provider.baseURL,
-      });
-      const compatibleCompletion = await compatibleClient.chat.completions.create({
-        model: modelToUse,
-        messages: requestBody.messages,
-        stream: requestBody.stream || false,
-      });
-      return compatibleCompletion;
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--secondary-color);
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
 
-    default:
-      throw new Error(`Unsupported platform: ${provider.platform}`);
-  }
-}
+        .container {
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 600px;
+            box-sizing: border-box;
+            border: 1px solid #e1e4e8;
+        }
+        
+        h1 {
+            color: var(--secondary-color);
+            font-size: 28px;
+            margin-bottom: 30px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .section-title {
+            color: var(--secondary-color);
+            font-size: 18px;
+            font-weight: 500;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        
+        .sub-title {
+            color: #777;
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
 
-export default async function handler(request, response) {
-  const unifiedKey = request.headers['authorization']?.split(' ')[1];
-  const storedUnifiedKey = await kv.get('unified_api_key');
+        .hidden {
+            display: none;
+        }
+        
+        .add-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .add-form .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
 
-  if (!unifiedKey || unifiedKey !== storedUnifiedKey) {
-      return response.status(401).json({ error: 'Unauthorized: Invalid or missing API key.' });
-  }
+        .add-form label {
+            font-size: 14px;
+            color: #555;
+            text-align: left;
+        }
 
-  try {
-    const providers = await kv.get('api_keys');
+        .add-form input, .add-form select {
+            width: 100%;
+            padding: 12px;
+            box-sizing: border-box;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 16px;
+        }
 
-    if (!providers || providers.length === 0) {
-      return response.status(503).json({ error: 'No API keys configured.' });
-    }
+        .add-form button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background-color: var(--primary-color);
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 10px;
+        }
 
-    let lastError = null;
+        .add-form button:hover {
+            background-color: #3a75b6;
+        }
 
-    for (const provider of providers) {
-      try {
-        const result = await handleRequest(provider, request.body);
-        console.log(`Successfully used API from: ${provider.platform}`);
-        return response.status(200).json(result);
-      } catch (error) {
-        console.error(`Error with ${provider.platform} API:`, error.message);
-        lastError = error;
-      }
-    }
+        .keys-list {
+            margin-top: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
 
-    return response.status(500).json({ error: 'All API providers failed.', details: lastError?.message });
+        .key-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #e1e4e8;
+            font-size: 14px;
+        }
+        
+        .key-item:last-child {
+            border-bottom: none;
+        }
+        
+        .key-item .key-info {
+            word-break: break-all;
+            flex-grow: 1;
+            margin-right: 10px;
+            color: #555;
+        }
 
-  } catch (error) {
-    console.error('Proxy Error:', error.message);
-    return response.status(500).json({ error: 'Internal server error.', details: error.message });
-  }
-}
+        .key-item .delete-btn {
+            background-color: var(--delete-color);
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .key-item .delete-btn:hover {
+            background-color: #c0392b;
+        }
+
+        .main-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .main-buttons button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background-color: var(--primary-color);
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .main-buttons button:hover {
+            background-color: #3a75b6;
+        }
+
+        #status {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .success {
+            background-color: var(--success-bg);
+            color: var(--success-text);
+        }
+
+        .error {
+            background-color: var(--error-bg);
+            color: var(--error-text);
+        }
+
+        .key-display-container {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .key-display {
+            font-family: monospace;
+            word-break: break-all;
+            background-color: #f1f3f5;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 14px;
+            line-height: 1.5;
+            margin-top: 10px;
+        }
+        
+        .key-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .key-actions button {
+            flex-grow: 1;
+            padding: 8px;
+            font-size: 14px;
+        }
+        
+        .copy-btn {
+            background-color: var(--copy-color);
+        }
+        
+        .copy-btn:hover {
+            background-color: #279e57;
+        }
+        
+        .reset-btn {
+            background-color: #999;
+        }
+        
+        .reset-btn:hover {
+            background-color: #777;
+        }
+        
+        .add-form-group {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body style="opacity: 0;">
+    <div class="container">
+        <h1>API 密钥管理</h1>
+
+        <div id="login-form" class="hidden">
+            <p class="sub-title">请输入管理密码：</p>
+            <input type="password" id="password" placeholder="管理密码">
+            <div class="main-buttons">
+                <button onclick="login()">登录</button>
+            </div>
+        </div>
+
+        <div id="manage-panel" class="hidden">
+            <p class="section-title">统一代理 API 密钥</p>
+            <div class="key-display-container">
+                <p class="sub-title">请将此密钥填写到第三方软件中：</p>
+                <div id="unified-key-display" class="key-display"></div>
+                <div class="key-actions">
+                    <button class="copy-btn" onclick="copyUnifiedKey()">复制</button>
+                    <button class="reset-btn" onclick="resetUnifiedKey()">重置密钥</button>
+                </div>
+            </div>
+
+            <p class="section-title">管理后端 API 密钥</p>
+            <div class="add-form-group">
+                <div class="add-form">
+                    <div class="input-group">
+                        <label for="add-platform">选择平台：</label>
+                        <select id="add-platform">
+                            <option value="openai">OpenAI</option>
+                            <option value="anthropic">Anthropic Claude</option>
+                            <option value="google">Google (Gemini)</option>
+                            <option value="qwen">阿里通义千问 (Qwen)</option>
+                            <option value="deepseek">DeepSeek</option>
+                            <option value="kimi">Kimi</option>
+                            <option value="llama">Llama</option>
+                            <option value="azure-openai">Azure OpenAI</option>
+                            <option value="openai-compatible">OpenAI 兼容</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="add-key-input">输入 API 密钥：</label>
+                        <input type="text" id="add-key-input" placeholder="输入 API 密钥">
+                    </div>
+                    <div class="input-group">
+                        <label for="add-model-input">输入模型名称：</label>
+                        <input type="text" id="add-model-input" placeholder="例如: gpt-4o, claude-3-sonnet">
+                    </div>
+                    <div class="input-group" id="baseurl-group">
+                        <label for="add-baseurl-input">输入 Base URL：</label>
+                        <input type="text" id="add-baseurl-input" placeholder="仅用于兼容/Azure/非官方地址">
+                    </div>
+                    <button onclick="addKeyToList()">添加到列表</button>
+                </div>
+            </div>
+
+            <p class="section-title">已添加的密钥</p>
+            <div class="keys-list" id="keys-list-container">
+                <p style="text-align:center; color:#999;">暂无密钥</p>
+            </div>
+
+            <div class="main-buttons">
+                <button onclick="updateKeys()">更新密钥</button>
+            </div>
+        </div>
+
+        <div id="status"></div>
+    </div>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const loginForm = document.getElementById('login-form');
+        const managePanel = document.getElementById('manage-panel');
+        const keysListContainer = document.getElementById('keys-list-container');
+        const addPlatformSelect = document.getElementById('add-platform');
+        const addKeyInput = document.getElementById('add-key-input');
+        const addModelInput = document.getElementById('add-model-input');
+        const addBaseUrlInput = document.getElementById('add-baseurl-input');
+        const unifiedKeyDisplay = document.getElementById('unified-key-display');
+        const baseurlGroup = document.getElementById('baseurl-group');
+
+        const platformsWithBaseUrl = ['openai-compatible', 'azure-openai'];
+
+        addPlatformSelect.addEventListener('change', () => {
+            if (platformsWithBaseUrl.includes(addPlatformSelect.value)) {
+                baseurlGroup.style.display = 'block';
+            } else {
+                baseurlGroup.style.display = 'none';
+            }
+        });
+        addPlatformSelect.dispatchEvent(new Event('change'));
+
+        function renderKeysList(keys) {
+            keysListContainer.innerHTML = '';
+            if (keys && keys.length > 0) {
+                keys.forEach((item, index) => {
+                    const keyItem = document.createElement('div');
+                    keyItem.className = 'key-item';
+                    const displayUrl = item.baseURL ? ` (${item.baseURL.replace(/^https?:\/\//, '').slice(0, 25)}...)` : '';
+                    const displayModel = item.model ? ` [${item.model}]` : '';
+                    keyItem.innerHTML = `
+                        <span class="key-info">${item.platform}: ${item.key.slice(0, 4)}...${item.key.slice(-4)}${displayModel}${displayUrl}</span>
+                        <button class="delete-btn" onclick="removeKeyFromList(${index})">删除</button>
+                    `;
+                    keysListContainer.appendChild(keyItem);
+                });
+            } else {
+                keysListContainer.innerHTML = `<p style="text-align:center; color:#999;">暂无密钥</p>`;
+            }
+        }
+        
+        let currentKeys = [];
+
+        function addKeyToList() {
+            const platform = addPlatformSelect.value;
+            const key = addKeyInput.value.trim();
+            const model = addModelInput.value.trim();
+            const baseURL = addBaseUrlInput.value.trim();
+            
+            if (!key) {
+                showStatus('请输入有效的密钥', 'error');
+                return;
+            }
+            
+            const newKey = { platform, key };
+            if (model) {
+                newKey.model = model;
+            }
+            if (platformsWithBaseUrl.includes(platform)) {
+                 if (!baseURL) {
+                    showStatus('请为该平台输入 Base URL', 'error');
+                    return;
+                }
+                newKey.baseURL = baseURL;
+            }
+
+            currentKeys.push(newKey);
+            addKeyInput.value = '';
+            addModelInput.value = '';
+            addBaseUrlInput.value = '';
+            addPlatformSelect.value = 'openai';
+            addPlatformSelect.dispatchEvent(new Event('change'));
+            
+            renderKeysList(currentKeys);
+            showStatus('密钥已添加到列表，请点击“更新密钥”保存', 'success');
+        }
+
+        function removeKeyFromList(index) {
+            currentKeys.splice(index, 1);
+            renderKeysList(currentKeys);
+            showStatus('密钥已从列表中移除，请点击“更新密钥”保存', 'success');
+        }
+
+        async function login() {
+            const password = document.getElementById('password').value;
+            if (!password) {
+                showStatus('请输入密码。', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/keys', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: password })
+                });
+
+                if (response.ok) {
+                    const savedKeys = await response.json();
+                    loginForm.classList.add('hidden');
+                    managePanel.classList.remove('hidden');
+                    currentKeys = savedKeys || [];
+                    renderKeysList(currentKeys);
+                    showStatus('登录成功！', 'success');
+                    localStorage.setItem('adminPassword', password);
+                    localStorage.setItem('loginTimestamp', Date.now());
+                    getUnifiedKey();
+                } else {
+                    const error = await response.json();
+                    throw new Error(error.error);
+                }
+            } catch (error) {
+                showStatus('登录失败：' + error.message, 'error');
+            }
+        }
+        
+        async function updateKeys() {
+            const password = localStorage.getItem('adminPassword');
+            const timestamp = localStorage.getItem('loginTimestamp');
+
+            if (!password || !timestamp) {
+                showStatus('请先登录。', 'error');
+                return;
+            }
+
+            const oneHourInMs = 60 * 60 * 1000;
+            if (Date.now() - timestamp > oneHourInMs) {
+                showStatus('会话已过期，请重新登录。', 'error');
+                localStorage.removeItem('adminPassword');
+                localStorage.removeItem('loginTimestamp');
+                setTimeout(() => window.location.reload(), 1500);
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/manage', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        password: password,
+                        keys: currentKeys
+                    })
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    showStatus('密钥已成功更新！', 'success');
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                showStatus('更新失败：' + error.message, 'error');
+            }
+        }
+        
+        async function getUnifiedKey() {
+            const password = localStorage.getItem('adminPassword');
+            if (!password) return;
+
+            try {
+                const response = await fetch('/api/keys', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: password, action: 'get_unified_key' })
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    unifiedKeyDisplay.textContent = data.unifiedKey;
+                } else {
+                    throw new Error('Failed to get unified key.');
+                }
+            } catch(error) {
+                console.error(error);
+                unifiedKeyDisplay.textContent = '获取失败';
+            }
+        }
+
+        async function resetUnifiedKey() {
+            if (!confirm('确定要重置统一 API 密钥吗？这将导致旧密钥失效。')) {
+                return;
+            }
+            const password = localStorage.getItem('adminPassword');
+            if (!password) return;
+
+            try {
+                const response = await fetch('/api/keys', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: password, action: 'reset_unified_key' })
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    unifiedKeyDisplay.textContent = data.unifiedKey;
+                    showStatus('统一密钥已重置！', 'success');
+                } else {
+                    throw new Error('Failed to reset unified key.');
+                }
+            } catch(error) {
+                console.error(error);
+                showStatus('重置失败', 'error');
+            }
+        }
+
+        async function copyUnifiedKey() {
+            try {
+                const keyToCopy = unifiedKeyDisplay.textContent;
+                if (keyToCopy && keyToCopy !== '获取失败') {
+                    await navigator.clipboard.writeText(keyToCopy);
+                    showStatus('已成功复制到剪贴板！', 'success');
+                } else {
+                    showStatus('没有可复制的密钥', 'error');
+                }
+            } catch (err) {
+                showStatus('复制失败，请手动复制', 'error');
+                console.error('Copy failed:', err);
+            }
+        }
+
+        function showStatus(message, type) {
+            statusDiv.textContent = message;
+            statusDiv.className = 'status';
+            statusDiv.classList.add(type);
+        }
+
+        (async function checkLoginState() {
+            const password = localStorage.getItem('adminPassword');
+            const timestamp = localStorage.getItem('loginTimestamp');
+            
+            if (password && timestamp) {
+                const oneHourInMs = 60 * 60 * 1000;
+                if (Date.now() - timestamp <= oneHourInMs) {
+                    try {
+                        const response = await fetch('/api/keys', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ password: password })
+                        });
+                        if (response.ok) {
+                            const savedKeys = await response.json();
+                            loginForm.classList.add('hidden');
+                            managePanel.classList.remove('hidden');
+                            currentKeys = savedKeys || [];
+                            renderKeysList(currentKeys);
+                            showStatus('已自动登录', 'success');
+                            getUnifiedKey();
+                            document.body.style.opacity = '1';
+                            return;
+                        }
+                    } catch (error) {
+                        console.error('Auto login failed:', error);
+                    }
+                }
+            }
+
+            loginForm.classList.remove('hidden');
+            document.body.style.opacity = '1';
+        })();
+    </script>
+</body>
+</html>
