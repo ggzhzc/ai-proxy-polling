@@ -4,30 +4,123 @@
     <meta charset="UTF-8">
     <title>API 密钥管理</title>
     <style>
-        body { font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; }
-        input, button, textarea { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
-        .hidden { display: none; }
-        #status { margin-top: 10px; padding: 10px; border-radius: 5px; }
-        .success { background-color: #d4edda; color: #155724; }
-        .error { background-color: #f8d7da; color: #721c24; }
+        :root {
+            --primary-color: #4A90E2;
+            --success-bg: #E8F5E9;
+            --success-text: #2E7D32;
+            --error-bg: #FBEAEA;
+            --error-text: #C62828;
+            --border-color: #E0E0E0;
+            --shadow-light: rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #F8F9FA;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px var(--shadow-light);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        
+        h1 {
+            color: #2C3E50;
+            font-size: 24px;
+            margin-bottom: 30px;
+        }
+
+        p {
+            color: #777;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            margin-top: 8px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        textarea {
+            resize: vertical;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background-color: var(--primary-color);
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #3a75b6;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #status {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .success {
+            background-color: var(--success-bg);
+            color: var(--success-text);
+        }
+
+        .error {
+            background-color: var(--error-bg);
+            color: var(--error-text);
+        }
     </style>
 </head>
 <body>
-    <h1>API 密钥管理</h1>
+    <div class="container">
+        <h1>API 密钥管理</h1>
 
-    <div id="login-form">
-        <p>请输入管理密码：</p>
-        <input type="password" id="password" placeholder="管理密码">
-        <button onclick="login()">登录</button>
+        <div id="login-form">
+            <p>请输入管理密码：</p>
+            <input type="password" id="password" placeholder="管理密码">
+            <button onclick="login()">登录</button>
+        </div>
+
+        <div id="manage-panel" class="hidden">
+            <p>当前 API 密钥列表 (每个密钥一行):</p>
+            <textarea id="api-keys-input" rows="10" placeholder="sk-xxxxxx&#10;sk-yyyyyy"></textarea>
+            <button onclick="updateKeys()">更新密钥</button>
+        </div>
+
+        <div id="status"></div>
     </div>
-
-    <div id="manage-panel" class="hidden">
-        <p>当前 API 密钥列表 (每个密钥一行):</p>
-        <textarea id="api-keys-input" rows="10" placeholder="sk-xxxxxx&#10;sk-yyyyyy"></textarea>
-        <button onclick="updateKeys()">更新密钥</button>
-    </div>
-
-    <div id="status"></div>
 
     <script>
         const statusDiv = document.getElementById('status');
@@ -54,7 +147,6 @@
                     managePanel.classList.remove('hidden');
                     document.getElementById('api-keys-input').value = keys.join('\n');
                     showStatus('登录成功！', 'success');
-                    // 存储密码，以便后续更新操作
                     window.sessionStorage.setItem('adminPassword', password);
                 } else {
                     const error = await response.json();
@@ -96,7 +188,6 @@
             }
         }
         
-        // 辅助函数：显示状态信息
         function showStatus(message, type) {
             statusDiv.textContent = message;
             statusDiv.className = '';
