@@ -19,6 +19,7 @@ export default async function handler(request, response) {
   }
 
   try {
+    // 专门处理获取/重置统一 Key 的逻辑
     if (action === 'get_unified_key') {
       let unifiedKey = await kv.get('unified_api_key');
       if (!unifiedKey) {
@@ -32,6 +33,7 @@ export default async function handler(request, response) {
       return response.status(200).json({ unifiedKey: newKey });
     }
     
+    // 如果没有指定 action，则默认返回所有平台的 API Keys
     const platformKeys = await kv.get('api_keys');
     return response.status(200).json(platformKeys || []);
   } catch (error) {
