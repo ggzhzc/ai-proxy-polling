@@ -285,6 +285,12 @@
             border-radius: 6px;
             overflow-x: auto;
         }
+        .small-text {
+            font-size: 12px;
+            color: #777;
+            margin-top: 5px;
+            text-align: left;
+        }
     </style>
 </head>
 <body>
@@ -308,6 +314,7 @@
                     <button class="copy-btn" onclick="copyUnifiedKey()">复制</button>
                     <button class="reset-btn" onclick="resetUnifiedKey()">重置密钥</button>
                 </div>
+                <p class="small-text"><strong>统一 API 地址:</strong> <code id="api-base-url-display">https://<span id="api-domain-placeholder">...</span>/api/proxy</code></p>
             </div>
 
             <p class="section-title">管理后端 API 密钥</p>
@@ -337,6 +344,7 @@
                     <div class="input-group" id="baseurl-group">
                         <label for="add-baseurl-input">输入 Base URL：</label>
                         <input type="text" id="add-baseurl-input" placeholder="仅用于兼容/Azure/非官方地址">
+                        <p class="small-text">例如：https://api.together.xyz/v1</p>
                     </div>
                     <button id="save-button" onclick="saveKey()">添加到列表</button>
                 </div>
@@ -349,29 +357,6 @@
 
             <div class="main-buttons">
                 <button onclick="updateKeys()">更新密钥</button>
-            </div>
-
-            <div class="api-usage-examples">
-                <p class="section-title">API 调用示例</p>
-                <p>将您的应用指向以下 API 地址，并使用上面生成的统一密钥进行认证。</p>
-                <ul>
-                    <li><strong>API 地址:</strong> <code id="api-base-url-display">https://<span id="api-domain-placeholder">...</span>/api/proxy</code></li>
-                </ul>
-                
-                <p><strong>cURL 示例:</strong></p>
-                <pre><code>curl -X POST &quot;<span id="curl-url-placeholder">...</span>&quot; \
--H &quot;Content-Type: application/json&quot; \
--H &quot;Authorization: Bearer <span id="curl-key-placeholder">...</span>&quot; \
--d '{{
-    &quot;messages&quot;: [{{ &quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Hello!&quot; }}]
-}}'</code></pre>
-
-                <p><strong>兼容 OpenAI API 的第三方应用:</strong></p>
-                <p>如果您的应用兼容 OpenAI API，请按照以下方式配置：</p>
-                <ul>
-                    <li><strong>API 地址 (Base URL):</strong> <code id="openai-compatible-url-placeholder">https://<span id="openai-compatible-domain-placeholder">...</span>/api/proxy</code></li>
-                    <li><strong>API 密钥:</strong> 使用上方生成的统一代理密钥。</li>
-                </ul>
             </div>
         </div>
 
@@ -392,13 +377,7 @@
         const saveButton = document.getElementById('save-button');
         
         const apiDomainPlaceholder = document.getElementById('api-domain-placeholder');
-        const curlUrlPlaceholder = document.getElementById('curl-url-placeholder');
-        const curlKeyPlaceholder = document.getElementById('curl-key-placeholder');
-        const openaiCompatibleDomainPlaceholder = document.getElementById('openai-compatible-domain-placeholder');
-
-        let currentKeys = [];
-        let editingIndex = -1; // -1 表示没有正在编辑的项
-
+        
         const platformsWithBaseUrl = ['openai-compatible', 'azure-openai'];
 
         addPlatformSelect.addEventListener('change', () => {
@@ -643,8 +622,6 @@
 
             apiDomainPlaceholder.textContent = apiDomain;
             openaiCompatibleDomainPlaceholder.textContent = apiDomain;
-            curlUrlPlaceholder.textContent = fullApiUrl;
-            curlKeyPlaceholder.textContent = unifiedKey || 'YOUR_UNIFIED_API_KEY';
         }
 
         function showStatus(message, type) {
