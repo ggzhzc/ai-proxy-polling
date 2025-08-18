@@ -267,30 +267,6 @@
         .reset-btn:hover {
             background-color: #777;
         }
-
-        .api-usage-examples {
-            margin-top: 40px;
-            border-top: 1px solid var(--border-color);
-            padding-top: 20px;
-        }
-        .api-usage-examples p, .api-usage-examples ul, .api-usage-examples ol {
-            font-size: 14px;
-            color: #555;
-            text-align: left;
-            line-height: 1.6;
-        }
-        .api-usage-examples pre {
-            background-color: var(--code-bg);
-            padding: 10px;
-            border-radius: 6px;
-            overflow-x: auto;
-        }
-        .small-text {
-            font-size: 12px;
-            color: #777;
-            margin-top: 5px;
-            text-align: left;
-        }
     </style>
 </head>
 <body>
@@ -314,7 +290,6 @@
                     <button class="copy-btn" onclick="copyUnifiedKey()">复制</button>
                     <button class="reset-btn" onclick="resetUnifiedKey()">重置密钥</button>
                 </div>
-                <p class="small-text"><strong>统一 API 地址:</strong> <code id="api-base-url-display">https://<span id="api-domain-placeholder">...</span>/api/proxy</code></p>
             </div>
 
             <p class="section-title">管理后端 API 密钥</p>
@@ -376,8 +351,9 @@
         const baseurlGroup = document.getElementById('baseurl-group');
         const saveButton = document.getElementById('save-button');
         
-        const apiDomainPlaceholder = document.getElementById('api-domain-placeholder');
-        
+        let currentKeys = [];
+        let editingIndex = -1; // -1 表示没有正在编辑的项
+
         const platformsWithBaseUrl = ['openai-compatible', 'azure-openai'];
 
         addPlatformSelect.addEventListener('change', () => {
@@ -502,7 +478,6 @@
                     localStorage.setItem('adminPassword', password);
                     localStorage.setItem('loginTimestamp', Date.now());
                     getUnifiedKey();
-                    setApiUsagePlaceholders();
                 } else {
                     const error = await response.json();
                     throw new Error(error.error);
@@ -564,7 +539,6 @@
                 if (response.ok) {
                     const data = await response.json();
                     unifiedKeyDisplay.textContent = data.unifiedKey;
-                    setApiUsagePlaceholders(data.unifiedKey);
                 } else {
                     throw new Error('Failed to get unified key.');
                 }
@@ -590,7 +564,6 @@
                 if (response.ok) {
                     const data = await response.json();
                     unifiedKeyDisplay.textContent = data.unifiedKey;
-                    setApiUsagePlaceholders(data.unifiedKey);
                     showStatus('统一密钥已重置！', 'success');
                 } else {
                     throw new Error('Failed to reset unified key.');
@@ -618,10 +591,7 @@
 
         function setApiUsagePlaceholders(unifiedKey) {
             const apiDomain = window.location.hostname;
-            const fullApiUrl = `https://${apiDomain}/api/proxy`;
-
             apiDomainPlaceholder.textContent = apiDomain;
-            openaiCompatibleDomainPlaceholder.textContent = apiDomain;
         }
 
         function showStatus(message, type) {
