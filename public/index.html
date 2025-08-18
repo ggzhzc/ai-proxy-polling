@@ -16,7 +16,6 @@
             --delete-color: #E74C3C;
             --copy-color: #2ECC71;
             --edit-color: #F39C12;
-            --code-bg: #f5f5f5;
         }
 
         body {
@@ -285,7 +284,6 @@
             <p class="section-title">统一代理 API 密钥</p>
             <div class="key-display-container">
                 <p class="sub-title">请将此密钥填写到第三方软件中：</p>
-                <p class="sub-title">统一调用api链接示例：https://<你的 Vercel 域名>/api/proxy</p>
                 <div id="unified-key-display" class="key-display"></div>
                 <div class="key-actions">
                     <button class="copy-btn" onclick="copyUnifiedKey()">复制</button>
@@ -319,8 +317,7 @@
                     </div>
                     <div class="input-group" id="baseurl-group">
                         <label for="add-baseurl-input">输入 Base URL：</label>
-                        <input type="text" id="add-baseurl-input" placeholder="兼容OpenAI等非官方地址 url示例：https://api.xxxx.com/v1">
-                        <p class="small-text">例如：https://api.together.xyz/v1</p>
+                        <input type="text" id="add-baseurl-input" placeholder="仅用于兼容/Azure/非官方地址">
                     </div>
                     <button id="save-button" onclick="saveKey()">添加到列表</button>
                 </div>
@@ -351,7 +348,7 @@
         const unifiedKeyDisplay = document.getElementById('unified-key-display');
         const baseurlGroup = document.getElementById('baseurl-group');
         const saveButton = document.getElementById('save-button');
-        
+
         let currentKeys = [];
         let editingIndex = -1; // -1 表示没有正在编辑的项
 
@@ -590,11 +587,6 @@
             }
         }
 
-        function setApiUsagePlaceholders(unifiedKey) {
-            const apiDomain = window.location.hostname;
-            apiDomainPlaceholder.textContent = apiDomain;
-        }
-
         function showStatus(message, type) {
             statusDiv.textContent = message;
             statusDiv.className = 'status';
@@ -630,10 +622,9 @@
                     }
                 }
             }
-            // 确保页面最终显示内容
+
             loginForm.classList.remove('hidden');
             document.body.style.opacity = '1';
-            setApiUsagePlaceholders();
         })();
     </script>
 </body>
