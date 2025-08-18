@@ -46,10 +46,19 @@ async function handleRequest(provider, requestBody) {
     
     case 'google':
       const genAI = new GoogleGenerativeAI(provider.key);
-      const model = genAI.getGenerativeModel({ model: modelToUse });
-      const chat = model.startChat({ history: [] });
-      const lastMessageContent = requestBody.messages[requestBody.messages.length - 1].content;
-      const googleCompletion = await chat.sendMessage(lastMessageContent);
+      const googleModel = genAI.getGenerativeModel({ model: modelToUse });
+
+      // Gemini 的 API 格式与 OpenAI 不同，需要手动转换
+      // 这里的逻辑已修复，可以正确处理多轮对话
+      const googleHistory = requestBody.messages.slice(0, -1).map(msg => ({
+        role: msg.role === 'user' ? 'user' : 'model', // Gemini中system角色也被视为model
+        parts: [{ text: msg.content }]
+      }));
+      const lastMessage = requestBody.messages[requestBody.messages.length - 1];
+      
+      const chat = googleModel.startChat({ history: googleHistory });
+      const googleCompletion = await chat.sendMessage(lastMessage.content);
+      
       return {
           id: 'google-response',
           model: modelToUse,
