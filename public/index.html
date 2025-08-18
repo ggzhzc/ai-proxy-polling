@@ -16,6 +16,7 @@
             --delete-color: #E74C3C;
             --copy-color: #2ECC71;
             --edit-color: #F39C12;
+            --code-bg: #f5f5f5;
         }
 
         body {
@@ -318,6 +319,7 @@
                     <div class="input-group" id="baseurl-group">
                         <label for="add-baseurl-input">输入 Base URL：</label>
                         <input type="text" id="add-baseurl-input" placeholder="仅用于兼容/Azure/非官方地址">
+                        <p class="small-text">例如：https://api.together.xyz/v1</p>
                     </div>
                     <button id="save-button" onclick="saveKey()">添加到列表</button>
                 </div>
@@ -348,9 +350,9 @@
         const unifiedKeyDisplay = document.getElementById('unified-key-display');
         const baseurlGroup = document.getElementById('baseurl-group');
         const saveButton = document.getElementById('save-button');
-
+        
         let currentKeys = [];
-        let editingIndex = -1; // -1 表示没有正在编辑的项
+        let editingIndex = -1;
 
         const platformsWithBaseUrl = ['openai-compatible', 'azure-openai'];
 
@@ -409,14 +411,12 @@
             }
 
             if (editingIndex === -1) {
-                // 新增
                 currentKeys.push(newKey);
                 showStatus('密钥已添加到列表，请点击“更新密钥”保存', 'success');
             } else {
-                // 更新
                 currentKeys[editingIndex] = newKey;
-                editingIndex = -1; // 重置编辑状态
-                saveButton.textContent = '添加到列表'; // 恢复按钮文本
+                editingIndex = -1;
+                saveButton.textContent = '添加到列表';
                 showStatus('密钥已在列表中更新，请点击“更新密钥”保存', 'success');
             }
             
@@ -476,6 +476,7 @@
                     localStorage.setItem('adminPassword', password);
                     localStorage.setItem('loginTimestamp', Date.now());
                     getUnifiedKey();
+                    setApiUsagePlaceholders();
                 } else {
                     const error = await response.json();
                     throw new Error(error.error);
@@ -622,7 +623,7 @@
                     }
                 }
             }
-
+            // 确保页面最终显示内容
             loginForm.classList.remove('hidden');
             document.body.style.opacity = '1';
         })();
