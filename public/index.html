@@ -16,6 +16,7 @@
             --delete-color: #E74C3C;
             --copy-color: #2ECC71;
             --edit-color: #F39C12;
+            --code-bg: #f5f5f5;
         }
 
         body {
@@ -266,6 +267,24 @@
         .reset-btn:hover {
             background-color: #777;
         }
+
+        .api-usage-examples {
+            margin-top: 40px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+        }
+        .api-usage-examples p, .api-usage-examples ul, .api-usage-examples ol {
+            font-size: 14px;
+            color: #555;
+            text-align: left;
+            line-height: 1.6;
+        }
+        .api-usage-examples pre {
+            background-color: var(--code-bg);
+            padding: 10px;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
     </style>
 </head>
 <body>
@@ -331,6 +350,29 @@
             <div class="main-buttons">
                 <button onclick="updateKeys()">更新密钥</button>
             </div>
+
+            <div class="api-usage-examples">
+                <p class="section-title">API 调用示例</p>
+                <p>将您的应用指向以下 API 地址，并使用上面生成的统一密钥进行认证。</p>
+                <ul>
+                    <li><strong>API 地址:</strong> <code id="api-base-url-display">https://<span id="api-domain-placeholder">...</span>/api/proxy</code></li>
+                </ul>
+                
+                <p><strong>cURL 示例:</strong></p>
+                <pre><code>curl -X POST &quot;<span id="curl-url-placeholder">...</span>&quot; \
+-H &quot;Content-Type: application/json&quot; \
+-H &quot;Authorization: Bearer <span id="curl-key-placeholder">...</span>&quot; \
+-d '{{
+    &quot;messages&quot;: [{{ &quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Hello!&quot; }}]
+}}'</code></pre>
+
+                <p><strong>兼容 OpenAI API 的第三方应用:</strong></p>
+                <p>如果您的应用兼容 OpenAI API，请按照以下方式配置：</p>
+                <ul>
+                    <li><strong>API 地址 (Base URL):</strong> <code id="openai-compatible-url-placeholder">https://<span id="openai-compatible-domain-placeholder">...</span>/api/proxy</code></li>
+                    <li><strong>API 密钥:</strong> 使用上方生成的统一代理密钥。</li>
+                </ul>
+            </div>
         </div>
 
         <div id="status"></div>
@@ -348,6 +390,11 @@
         const unifiedKeyDisplay = document.getElementById('unified-key-display');
         const baseurlGroup = document.getElementById('baseurl-group');
         const saveButton = document.getElementById('save-button');
+        
+        const apiDomainPlaceholder = document.getElementById('api-domain-placeholder');
+        const curlUrlPlaceholder = document.getElementById('curl-url-placeholder');
+        const curlKeyPlaceholder = document.getElementById('curl-key-placeholder');
+        const openaiCompatibleDomainPlaceholder = document.getElementById('openai-compatible-domain-placeholder');
 
         let currentKeys = [];
         let editingIndex = -1; // -1 表示没有正在编辑的项
@@ -476,6 +523,7 @@
                     localStorage.setItem('adminPassword', password);
                     localStorage.setItem('loginTimestamp', Date.now());
                     getUnifiedKey();
+                    setApiUsagePlaceholders();
                 } else {
                     const error = await response.json();
                     throw new Error(error.error);
@@ -537,6 +585,7 @@
                 if (response.ok) {
                     const data = await response.json();
                     unifiedKeyDisplay.textContent = data.unifiedKey;
+                    setApiUsagePlaceholders(data.unifiedKey);
                 } else {
                     throw new Error('Failed to get unified key.');
                 }
@@ -562,6 +611,7 @@
                 if (response.ok) {
                     const data = await response.json();
                     unifiedKeyDisplay.textContent = data.unifiedKey;
+                    setApiUsagePlaceholders(data.unifiedKey);
                     showStatus('统一密钥已重置！', 'success');
                 } else {
                     throw new Error('Failed to reset unified key.');
@@ -585,6 +635,16 @@
                 showStatus('复制失败，请手动复制', 'error');
                 console.error('Copy failed:', err);
             }
+        }
+
+        function setApiUsagePlaceholders(unifiedKey) {
+            const apiDomain = window.location.hostname;
+            const fullApiUrl = `https://${apiDomain}/api/proxy`;
+
+            apiDomainPlaceholder.textContent = apiDomain;
+            openaiCompatibleDomainPlaceholder.textContent = apiDomain;
+            curlUrlPlaceholder.textContent = fullApiUrl;
+            curlKeyPlaceholder.textContent = unifiedKey || 'YOUR_UNIFIED_API_KEY';
         }
 
         function showStatus(message, type) {
@@ -622,9 +682,10 @@
                     }
                 }
             }
-
+            // 确保页面最终显示内容
             loginForm.classList.remove('hidden');
             document.body.style.opacity = '1';
+            setApiUsagePlaceholders();
         })();
     </script>
 </body>
