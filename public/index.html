@@ -15,6 +15,7 @@
             --shadow-light: rgba(0, 0, 0, 0.05);
             --delete-color: #E74C3C;
             --copy-color: #2ECC71;
+            --edit-color: #F39C12;
         }
 
         body {
@@ -149,7 +150,12 @@
             color: #555;
         }
 
-        .key-item .delete-btn {
+        .key-item .actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .key-item .actions button {
             background-color: var(--delete-color);
             color: #fff;
             border: none;
@@ -159,7 +165,15 @@
             transition: background-color 0.2s;
         }
         
-        .key-item .delete-btn:hover {
+        .key-item .actions .edit-btn {
+            background-color: var(--edit-color);
+        }
+
+        .key-item .actions .edit-btn:hover {
+            background-color: #d68910;
+        }
+
+        .key-item .actions .delete-btn:hover {
             background-color: #c0392b;
         }
 
@@ -305,7 +319,7 @@
                         <label for="add-baseurl-input">输入 Base URL：</label>
                         <input type="text" id="add-baseurl-input" placeholder="仅用于兼容/Azure/非官方地址">
                     </div>
-                    <button onclick="addKeyToList()">添加到列表</button>
+                    <button onclick="saveKey()">添加到列表</button>
                 </div>
             </div>
 
@@ -334,6 +348,9 @@
         const unifiedKeyDisplay = document.getElementById('unified-key-display');
         const baseurlGroup = document.getElementById('baseurl-group');
 
+        let currentKeys = [];
+        let editingIndex = -1; // -1 表示没有正在编辑的项
+
         const platformsWithBaseUrl = ['openai-compatible', 'azure-openai'];
 
         addPlatformSelect.addEventListener('change', () => {
@@ -355,7 +372,10 @@
                     const displayModel = item.model ? ` [${item.model}]` : '';
                     keyItem.innerHTML = `
                         <span class="key-info">${item.platform}: ${item.key.slice(0, 4)}...${item.key.slice(-4)}${displayModel}${displayUrl}</span>
-                        <button class="delete-btn" onclick="removeKeyFromList(${index})">删除</button>
+                        <div class="actions">
+                            <button class="edit-btn" onclick="editKey(${index})">编辑</button>
+                            <button class="delete-btn" onclick="removeKeyFromList(${index})">删除</button>
+                        </div>
                     `;
                     keysListContainer.appendChild(keyItem);
                 });
@@ -364,9 +384,7 @@
             }
         }
         
-        let currentKeys = [];
-
-        function addKeyToList() {
+        function saveKey() {
             const platform = addPlatformSelect.value;
             const key = addKeyInput.value.trim();
             const model = addModelInput.value.trim();
@@ -389,7 +407,18 @@
                 newKey.baseURL = baseURL;
             }
 
-            currentKeys.push(newKey);
+            if (editingIndex === -1) {
+                // 新增
+                currentKeys.push(newKey);
+                showStatus('密钥已添加到列表，请点击“更新密钥”保存', 'success');
+            } else {
+                // 更新
+                currentKeys[editingIndex] = newKey;
+                editingIndex = -1;
+                document.querySelector('#add-form button').textContent = '添加到列表';
+                showStatus('密钥已在列表中更新，请点击“更新密钥”保存', 'success');
+            }
+            
             addKeyInput.value = '';
             addModelInput.value = '';
             addBaseUrlInput.value = '';
@@ -397,7 +426,23 @@
             addPlatformSelect.dispatchEvent(new Event('change'));
             
             renderKeysList(currentKeys);
-            showStatus('密钥已添加到列表，请点击“更新密钥”保存', 'success');
+        }
+
+        function editKey(index) {
+            const keyToEdit = currentKeys[index];
+            addPlatformSelect.value = keyToEdit.platform;
+            addKeyInput.value = keyToEdit.key;
+            addModelInput.value = keyToEdit.model || '';
+            if (keyToEdit.baseURL) {
+                addBaseUrlInput.value = keyToEdit.baseURL;
+            } else {
+                addBaseUrlInput.value = '';
+            }
+            addPlatformSelect.dispatchEvent(new Event('change'));
+            
+            editingIndex = index;
+            document.querySelector('#add-form button').textContent = '保存更改';
+            showStatus('正在编辑密钥，请修改后点击“保存更改”', 'success');
         }
 
         function removeKeyFromList(index) {
