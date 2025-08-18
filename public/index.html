@@ -319,7 +319,7 @@
                         <label for="add-baseurl-input">输入 Base URL：</label>
                         <input type="text" id="add-baseurl-input" placeholder="仅用于兼容/Azure/非官方地址">
                     </div>
-                    <button onclick="saveKey()">添加到列表</button>
+                    <button id="save-button" onclick="saveKey()">添加到列表</button>
                 </div>
             </div>
 
@@ -347,6 +347,7 @@
         const addBaseUrlInput = document.getElementById('add-baseurl-input');
         const unifiedKeyDisplay = document.getElementById('unified-key-display');
         const baseurlGroup = document.getElementById('baseurl-group');
+        const saveButton = document.getElementById('save-button');
 
         let currentKeys = [];
         let editingIndex = -1; // -1 表示没有正在编辑的项
@@ -414,8 +415,8 @@
             } else {
                 // 更新
                 currentKeys[editingIndex] = newKey;
-                editingIndex = -1;
-                document.querySelector('#add-form button').textContent = '添加到列表';
+                editingIndex = -1; // 重置编辑状态
+                saveButton.textContent = '添加到列表'; // 恢复按钮文本
                 showStatus('密钥已在列表中更新，请点击“更新密钥”保存', 'success');
             }
             
@@ -441,7 +442,7 @@
             addPlatformSelect.dispatchEvent(new Event('change'));
             
             editingIndex = index;
-            document.querySelector('#add-form button').textContent = '保存更改';
+            saveButton.textContent = '保存更改';
             showStatus('正在编辑密钥，请修改后点击“保存更改”', 'success');
         }
 
