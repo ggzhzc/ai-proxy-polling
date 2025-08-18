@@ -2,7 +2,6 @@ import { kv } from '@vercel/kv';
 import { OpenAI } from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-const axios = require('axios');
 
 async function handleRequest(provider, requestBody) {
   const modelToUse = provider.model;
@@ -62,24 +61,6 @@ async function handleRequest(provider, requestBody) {
           }],
       };
 
-    case 'qwen':
-      const qwenResponse = await axios.post(
-        'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation',
-        {
-          model: modelToUse,
-          input: {
-            messages: requestBody.messages,
-          },
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${provider.key}`
-          },
-        }
-      );
-      return qwenResponse.data;
-      
     case 'deepseek':
       const deepseekClient = new OpenAI({
         apiKey: provider.key,
